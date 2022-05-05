@@ -182,9 +182,11 @@ def create_seta(event):
             x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
 
             point2 = trans_coord([x,y])
+            point2 = np.divide(point2, zoom_factor)
             theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
-            
             seta_p2 = (mouseX, mouseY)
+            #theta = math.atan2(seta_p1[1]-seta_p2[1], seta_p1[0]-seta_p2[0])
+            
             #print(np.divide(point, zoom_factor))
             print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
 
@@ -199,7 +201,7 @@ def create_seta(event):
             #
         except Exception as e:
             print(e)
-    
+
 
 
 
