@@ -7,6 +7,8 @@ class ScrollableImage(tkinter.Frame):
         super(ScrollableImage, self).__init__(master=master, **kw)
         self.cnvs = tkinter.Canvas(self, highlightthickness=0, **kw)
         self.cnvs.create_image(0, 0, anchor='nw', image=self.image)
+        #self.cnvs.place(relx=0.0, rely=1.0, anchor=SW)
+
         # Vertical and Horizontal scrollbars
         self.v_scroll = tkinter.Scrollbar(self, orient='vertical', width=sw)
         self.h_scroll = tkinter.Scrollbar(self, orient='horizontal', width=sw)
@@ -33,6 +35,11 @@ class ScrollableImage(tkinter.Frame):
         if evt.state == 1:
             self.cnvs.xview_scroll(-1*(evt.delta), 'units') # For MacOS
             self.cnvs.xview_scroll(int(-1*(evt.delta/120)), 'units') # For windows
+
+    def reset_canvas(self, ids):
+        for i in ids:
+            self.cnvs.delete(i)
+
 '''
 root = tkinter.Tk()
 img = tkinter.PhotoImage(file="map.png")
