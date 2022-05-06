@@ -29,12 +29,15 @@ dict_tags = {}
 objects_to_delete = []
 cont_tag = 0
 flag_iniciou_tag = 0
+botao_rotacionar = False
+angulo_rotacionar = 0.0
+rotacionar = False
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
 def init_setup():
-    global zoom_factor, radius, map_file, global_origin, resolution
-    f = open('config.json')
+    global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
+    f = open('config_pacheco.json')
     data = json.load(f)
     map_file = data['map_file']
     resolution = data['resolution']
@@ -65,13 +68,13 @@ def create_circle(x, y, r, canvasName): #center coordinates, radius
     return canvasName.create_oval(x0, y0, x1, y1)
 
 def draw_circle2(event):
-    mouseX,mouseY = event.x,event.y
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
 
 
     #max_y, max_x = np.shape(img)
-    global root, image_window, seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas
+    global root, image_window, seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans
+
     
     #myCanvas = tkinter.Canvas(root)
     #myCanvas.pack()
@@ -147,8 +150,14 @@ def draw_circle2(event):
             point2 = np.dot(HT, point)
 
             x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-            point = trans_coord([x,y])
-            print(np.divide(point, zoom_factor))
+            point = np.divide(trans_coord([x,y]) , zoom_factor)
+
+            #print(np.divide(point, zoom_factor))
+            click_p1 = [mouseX, mouseY]
+            click_p1_trans = point
+            if(rotacionar):
+                ponto_rotacionado = rotate_position(point)
+                print(ponto_rotacionado)
         except Exception as e:
             print(e)
 
@@ -160,6 +169,11 @@ def create_seta(event):
     # max_y, max_x = np.shape(img)
     global root, image_window, seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete
     
+    if(botao_rotacionar):
+        calcular_angulo_drop(event, click_p1, click_p1_trans, objects_to_delete)      
+
+
+
     if angle_mode:
         angle_mode = False
         # print('segundo ponto')
@@ -292,7 +306,87 @@ def salvar_tags():
     txt_num_tag.config(state="normal")
     button_tag_salvar.config(state="disabled")
     tkinter.messagebox.showinfo("Confirmação", "Tags posicionadas com sucesso!")
-    
+
+
+def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
+    global botao_rotacionar, angulo_rotacionar
+    try:
+        canvas = event.widget
+        mouseX = canvas.canvasx(event.x)
+        mouseY = canvas.canvasy(event.y)
+        shape = np.shape(img)
+        max_y, max_x  = shape[0], shape[1]
+        p2 = [mouseX, mouseY]
+
+        theta = np.pi
+        point = np.transpose([mouseX, mouseY, 1])
+        c, s = np.cos(float(theta)),np.sin(float(theta))
+        HT = np.array([
+        [c, 0, s], # Homogeneous Transformation Matrix
+        [0, 1, 0],
+        [-s, 0, c]])
+        point2 = np.dot(HT, point)
+
+        x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
+
+        point2 = trans_coord([x,y])
+        point2 = np.divide(point2, zoom_factor)  
+
+
+
+
+        obj = canvas.create_line(p1[0], p1[1], p2[0], p2[1], width=2, fill='red')
+        objects_to_delete.append(obj)    
+
+        obj = canvas.create_line(p1[0], p1[1], p2[0], p1[1], width=2, fill='green')
+        objects_to_delete.append(obj)
+
+        #calcular angulo
+        theta = math.atan2(point2[1]-p1_trans[1], point2[0]-p1_trans[0])
+        angulo_rotacionar = theta
+
+        #Após calcular a rotação reseta o click
+        botao_rotacionar = False
+        texto_check = 'Rotacionar {angulo:.3f} °'
+        check_rot.config(text=texto_check.format(angulo = np.rad2deg(theta)))
+
+        print(theta)
+    except Exception as e:
+        print(e)
+
+def rotate_position(point):
+        theta = -angulo_rotacionar
+        c, s = np.cos(float(theta)),np.sin(float(theta))
+        point = np.transpose([point[0], point[1], 1])
+        HT = np.array([
+        [c, -s, s], # Homogeneous Transformation Matrix
+        [s, c, 0],
+        [0, 0, 1]])
+        print(point)
+
+        ponto =  np.dot(HT, point)
+        return ponto[0], ponto[1]
+
+
+
+
+
+def get_position(event): #double click
+    pass
+
+def calc_rotacao():
+    global botao_rotacionar
+    botao_rotacionar = True
+
+def check_angulo_marcado():
+    global rotacionar
+    if (flag_rot.get() == 1):
+        print('Rotacionar')
+        #rotacionar todo click
+        rotacionar = True
+    else:
+        print('Nao Rotacionar')
+        rotacionar = False
 
 root = tkinter.Tk()
 root.title("Vixsystem - Setup Navegação")
@@ -333,8 +427,15 @@ button_reset.place(x=20, y=280)
 button_close = tkinter.Button(root, text="Sair", width=10, height=3, command=close_win)
 button_close.place(x=20, y=360)
 
+button_close = tkinter.Button(root, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
+button_close.place(x=20, y=460)
+
+flag_rot = tkinter.IntVar()
+check_rot = tkinter.Checkbutton(root, text='Rotacionar      ',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
+check_rot.pack()
 
 root.bind("<Button 1>",draw_circle2)
+root.bind("<Button 3>",get_position)
 root.bind("<ButtonRelease-1>",create_seta)
 
 root.mainloop()
