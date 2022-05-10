@@ -32,6 +32,7 @@ flag_iniciou_tag = 0
 botao_rotacionar = False
 angulo_rotacionar = 0.0
 rotacionar = False
+click_p1 = 0
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
@@ -158,6 +159,8 @@ def draw_circle2(event):
             if(rotacionar):
                 ponto_rotacionado = rotate_position(point)
                 print(ponto_rotacionado)
+            else:
+                print(point)
         except Exception as e:
             print(e)
 
@@ -205,14 +208,17 @@ def create_seta(event):
             print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
 
 
-            dict_tags[str(cont_tag)] = [point1[0], point1[1], theta]
 
             obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj)
-            obj = canvas.create_text(seta_p1[0], seta_p1[1],fill="red",font="Times 20 bold", text=str(cont_tag).zfill(4)) 
+            obj = canvas.create_text(seta_p1[0], seta_p1[1],fill="red",font="Times 18 bold", text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj)
+            txt_local = tkinter.simpledialog.askstring(title="Implantação TAG",
+                                  prompt="Informe a descrição do local:")
+            dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
+            
             cont_tag+=1
-            #
+            
         except Exception as e:
             print(e)
 
@@ -362,7 +368,7 @@ def rotate_position(point):
         [c, -s, s], # Homogeneous Transformation Matrix
         [s, c, 0],
         [0, 0, 1]])
-        print(point)
+        #print(point)
 
         ponto =  np.dot(HT, point)
         return ponto[0], ponto[1]
@@ -398,41 +404,55 @@ imgtk = ImageTk.PhotoImage(image=im)
 image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=largura, height=altura)
 image_window.pack(side="right")
 
-labelframe = tkinter.LabelFrame(root, text="Configurar Posicionamento das Tags", width=270, height=200)
+labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200)
 labelframe.pack( anchor="nw" )
  
 
-
-button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=10, height=3, command=ligar_tags, wraplength=90)
-button_tag.place(x=20, y=20)
-
-button_tag_salvar = tkinter.Button(labelframe, text="Salvar TAGs", width=10, height=3, background='lightgreen', command=salvar_tags, state="disabled", wraplength=90)
-button_tag_salvar.place(x=140, y=20)
-
 lbl_num_tag = tkinter.Label(labelframe, text="Nº Tag Inicial")
-lbl_num_tag.place(x=20, y=100)
+lbl_num_tag.place(x=10, y=10)
 
 txt_num_tag = tkinter.Text(labelframe, height = 1, width = 5, end="0")
-txt_num_tag.place(x=140, y=100)
+txt_num_tag.place(x=120, y=10)
 txt_num_tag.insert('end', '0')
 #left.pack()
 
+button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=10, height=2, command=ligar_tags, wraplength=90)
+button_tag.place(x=10, y=50)
 
-button_graph = tkinter.Button(root, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
-button_graph.place(x=20, y=210)
+button_tag_salvar = tkinter.Button(labelframe, text="Salvar TAGs", width=10, height=2, background='lightgreen', command=salvar_tags, state="disabled", wraplength=90)
+button_tag_salvar.place(x=10, y=110)
 
-button_reset = tkinter.Button(root, text="Resetar", width=10, height=3, command=reset_win)
-button_reset.place(x=20, y=280)
 
-button_close = tkinter.Button(root, text="Sair", width=10, height=3, command=close_win)
-button_close.place(x=20, y=360)
 
-button_close = tkinter.Button(root, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
-button_close.place(x=20, y=460)
+labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200)
+labelframe_grafo.pack( anchor="w" )
+
+button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
+button_graph.place(x=10, y=10)
+
+labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150)
+labelframe_rotacionar.pack( anchor="w" )
+
+button_rotacao = tkinter.Button(labelframe_rotacionar, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
+button_rotacao.place(x=10, y=15)
 
 flag_rot = tkinter.IntVar()
-check_rot = tkinter.Checkbutton(root, text='Rotacionar      ',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
-check_rot.pack()
+check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
+check_rot.place(x=10, y=90)
+#check_rot.pack()
+
+labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200)
+labelframe_geral.pack( anchor="w" )
+
+button_reset = tkinter.Button(labelframe_geral, text="Resetar", width=10, height=3, command=reset_win)
+button_reset.place(x=10, y=20)
+
+button_close = tkinter.Button(labelframe_geral, text="Sair", width=10, height=3, command=close_win)
+button_close.place(x=10, y=100)
+
+
+
+
 
 root.bind("<Button 1>",draw_circle2)
 root.bind("<Button 3>",get_position)
