@@ -38,7 +38,7 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('config_pacheco.json')
+    f = open('config.json')
     data = json.load(f)
     map_file = data['map_file']
     resolution = data['resolution']
@@ -47,7 +47,6 @@ def init_setup():
     zoom_factor = data['scale']
 
 init_setup()
-
 
 
 
@@ -68,92 +67,64 @@ def create_circle(x, y, r, canvasName): #center coordinates, radius
     y1 = y + r
     return canvasName.create_oval(x0, y0, x1, y1)
 
-def draw_circle2(event):
+
+def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
+
+    theta = np.pi
+    point = np.transpose([mouseX, mouseY, 1])
+    c, s = np.cos(float(theta)),np.sin(float(theta))
+    HT = np.array([
+    [c, 0, s], # Homogeneous Transformation Matrix
+    [0, 1, 0],
+    [-s, 0, c]])
+    point2 = np.dot(HT, point)
+
+    x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
+
+    point = trans_coord([x,y])
+    point = np.divide(point, zoom_factor)
+    return point
+
+
+def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
 
+    global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans
+    canvas = event.widget
 
-    #max_y, max_x = np.shape(img)
-    global root, image_window, seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans
+    mouseX, mouseY = 0,0
+    try:
+        mouseX = canvas.canvasx(event.x)
+        mouseY = canvas.canvasy(event.y)
+    except Exception as e:
+        print(e)
 
-    
-    #myCanvas = tkinter.Canvas(root)
-    #myCanvas.pack()
-    if graph_mode:
-        try:
-            canvas = event.widget
-            mouseX = canvas.canvasx(event.x)
-            mouseY = canvas.canvasy(event.y)
+    if (str(canvas) == '.!scrollableimage.!canvas') :
 
-            theta = np.pi
-            point = np.transpose([mouseX, mouseY, 1])
-            c, s = np.cos(float(theta)),np.sin(float(theta))
-            HT = np.array([
-            [c, 0, s], # Homogeneous Transformation Matrix
-            [0, 1, 0],
-            [-s, 0, c]])
-            point2 = np.dot(HT, point)
+        if graph_mode: # draw circles
+            point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
-            x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-
-            point = trans_coord([x,y])
-            x,y = point[0], point[1]
-            print(np.divide(point, zoom_factor))
+            print(point)
             c = create_circle(mouseX, mouseY, radius*zoom_factor, canvas)
             objects_to_delete.append(c)
-        except Exception as e:
-            print(e)
-    elif tag_mode:
-        if not angle_mode:
-            angle_mode = True
-            try:
-                # print('primeiro ponto')
-                canvas = event.widget
-                mouseX = canvas.canvasx(event.x)
-                mouseY = canvas.canvasy(event.y)
+        elif tag_mode:
+            if not angle_mode:
+                angle_mode = True
 
-                theta = np.pi
-                point = np.transpose([mouseX, mouseY, 1])
-                c, s = np.cos(float(theta)),np.sin(float(theta))
-                HT = np.array([
-                [c, 0, s], # Homogeneous Transformation Matrix
-                [0, 1, 0],
-                [-s, 0, c]])
-                point2 = np.dot(HT, point)
+                point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
-                x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-
-                point1 = trans_coord([x,y])
-                point1 = np.divide(point1, zoom_factor)
                 seta_p1 = (mouseX, mouseY)
+                #ponto
+                obj = canvas.create_line(seta_p1[0]+2, seta_p1[1], seta_p1[0]-2, seta_p1[1], width=3, fill='red')
+                objects_to_delete.append(obj)
+                #cruz
                 obj = canvas.create_line(seta_p1[0]+30, seta_p1[1], seta_p1[0]-30, seta_p1[1], width=3, fill='green')
                 objects_to_delete.append(obj)
                 obj = canvas.create_line(seta_p1[0], seta_p1[1]+30, seta_p1[0], seta_p1[1]-30, width=3, fill='green')
                 objects_to_delete.append(obj)                
-                obj = canvas.create_line(seta_p1[0]+2, seta_p1[1], seta_p1[0]-2, seta_p1[1], width=3, fill='red')
-                objects_to_delete.append(obj)
-                x,y = point1[0], point1[1]
-            except Exception as e:
-                print(e)
-    else:
-        try:
-            canvas = event.widget
-            mouseX = canvas.canvasx(event.x)
-            mouseY = canvas.canvasy(event.y)
-
-            theta = np.pi
-            point = np.transpose([mouseX, mouseY, 1])
-            c, s = np.cos(float(theta)),np.sin(float(theta))
-            HT = np.array([
-            [c, 0, s], # Homogeneous Transformation Matrix
-            [0, 1, 0],
-            [-s, 0, c]])
-            point2 = np.dot(HT, point)
-
-            x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-            point = np.divide(trans_coord([x,y]) , zoom_factor)
-
-            #print(np.divide(point, zoom_factor))
+        else:
+            point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
             click_p1 = [mouseX, mouseY]
             click_p1_trans = point
             if(rotacionar):
@@ -161,68 +132,52 @@ def draw_circle2(event):
                 print(ponto_rotacionado)
             else:
                 print(point)
-        except Exception as e:
-            print(e)
 
 
 def create_seta(event):
-    mouseX,mouseY = event.x,event.y
+    #mouseX,mouseY = event.x,event.y
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
     # max_y, max_x = np.shape(img)
-    global root, image_window, seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete
+    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete
     
+    try:
+        canvas = event.widget
+        mouseX = canvas.canvasx(event.x)
+        mouseY = canvas.canvasy(event.y)
+    except Exception as e:
+        print(e)
+
     if(botao_rotacionar):
         calcular_angulo_drop(event, click_p1, click_p1_trans, objects_to_delete)      
 
 
-
-    if angle_mode:
+    if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
         angle_mode = False
-        # print('segundo ponto')
-        try:
-            canvas = event.widget
-            mouseX = canvas.canvasx(event.x)
-            mouseY = canvas.canvasy(event.y)
             
+        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
-
-            theta = np.pi
-            point = np.transpose([mouseX, mouseY, 1])
-            c, s = np.cos(float(theta)),np.sin(float(theta))
-            HT = np.array([
-            [c, 0, s], # Homogeneous Transformation Matrix
-            [0, 1, 0],
-            [-s, 0, c]])
-            point2 = np.dot(HT, point)
-
-            x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-
-            point2 = trans_coord([x,y])
-            point2 = np.divide(point2, zoom_factor)
-            theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
-            seta_p2 = (mouseX, mouseY)
-            #theta = math.atan2(seta_p1[1]-seta_p2[1], seta_p1[0]-seta_p2[0])
-            
-            #print(np.divide(point, zoom_factor))
-            print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
-
-
-
+        theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
+        seta_p2 = (mouseX, mouseY)
+        
+        #removendo a cruz
+        ids = [objects_to_delete.pop(), objects_to_delete.pop()]
+        
+        image_window.reset_canvas(ids)
+        txt_local = tkinter.simpledialog.askstring(title="Implantação TAG", prompt="Informe a descrição do local:")
+        
+        if txt_local != None:
             obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj)
-            obj = canvas.create_text(seta_p1[0], seta_p1[1],fill="red",font="Times 18 bold", text=str(cont_tag).zfill(3)) 
+            obj = canvas.create_text(seta_p1[0], seta_p1[1],fill="red",font="Times 15 bold", text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj)
-            txt_local = tkinter.simpledialog.askstring(title="Implantação TAG",
-                                  prompt="Informe a descrição do local:")
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
+            print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
             cont_tag+=1
-            
-        except Exception as e:
-            print(e)
-
-
+        else:
+            #apagar o ponto
+            image_window.reset_canvas([objects_to_delete.pop()])
 
 
 def save_as_png(canvas,fileName):
@@ -244,7 +199,6 @@ cv2.namedWindow('image')
 img, global_origin = zoom(img, zoom_factor)
 shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
-# altura, largura = np.shape(img)
 
 def close_win():
    root.destroy()
@@ -292,10 +246,7 @@ def reset_win(event=None):
     cont_tag = int(txt_num_tag.get("1.0","end-1c"))
     txt_num_tag.config(state="normal")
     button_graph.config(state="normal")
-    #for i in objects_to_delete:
-    #    canvas.delete(i-1)
-    #    print(i)
-    print('FOIII!! Limpando a tela...')
+
 
 def salvar_tags():
     global cont_tag, image_window, flag_iniciou_tag
@@ -324,21 +275,7 @@ def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
         max_y, max_x  = shape[0], shape[1]
         p2 = [mouseX, mouseY]
 
-        theta = np.pi
-        point = np.transpose([mouseX, mouseY, 1])
-        c, s = np.cos(float(theta)),np.sin(float(theta))
-        HT = np.array([
-        [c, 0, s], # Homogeneous Transformation Matrix
-        [0, 1, 0],
-        [-s, 0, c]])
-        point2 = np.dot(HT, point)
-
-        x,y = point2[0]*resolution, (point2[1]-max_y)*resolution
-
-        point2 = trans_coord([x,y])
-        point2 = np.divide(point2, zoom_factor)  
-
-
+        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
 
         obj = canvas.create_line(p1[0], p1[1], p2[0], p2[1], width=2, fill='red')
@@ -360,6 +297,7 @@ def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
     except Exception as e:
         print(e)
 
+
 def rotate_position(point):
         theta = -angulo_rotacionar
         c, s = np.cos(float(theta)),np.sin(float(theta))
@@ -375,14 +313,23 @@ def rotate_position(point):
 
 
 
+def get_position_botao_dir(event): #
+    shape = np.shape(img)
+    max_y, max_x  = shape[0], shape[1]
 
+    canvas = event.widget
+    try:
+        mouseX = canvas.canvasx(event.x)
+        mouseY = canvas.canvasy(event.y)
+    except Exception as e:
+        print(e)
+    print(transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y))
 
-def get_position(event): #double click
-    pass
 
 def calc_rotacao():
     global botao_rotacionar
     botao_rotacionar = True
+
 
 def check_angulo_marcado():
     global rotacionar
@@ -414,7 +361,6 @@ lbl_num_tag.place(x=10, y=10)
 txt_num_tag = tkinter.Text(labelframe, height = 1, width = 5, end="0")
 txt_num_tag.place(x=120, y=10)
 txt_num_tag.insert('end', '0')
-#left.pack()
 
 button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=10, height=2, command=ligar_tags, wraplength=90)
 button_tag.place(x=10, y=50)
@@ -439,7 +385,6 @@ button_rotacao.place(x=10, y=15)
 flag_rot = tkinter.IntVar()
 check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
 check_rot.place(x=10, y=90)
-#check_rot.pack()
 
 labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200)
 labelframe_geral.pack( anchor="w" )
@@ -452,19 +397,8 @@ button_close.place(x=10, y=100)
 
 
 
-
-
-root.bind("<Button 1>",draw_circle2)
-root.bind("<Button 3>",get_position)
+root.bind("<Button 1>",click_esq_event)
+root.bind("<Button 3>",get_position_botao_dir)
 root.bind("<ButtonRelease-1>",create_seta)
 
 root.mainloop()
-# k = cv2.waitKey(20) & 0xFF
-# if k == 27:
-#     break
-# elif k == ord('d'):
-#     print(f'desenhandooo')
-#     tag_mode = not tag_mode
-# elif k == ord('t'):
-#     print('Adicionando tags')
-#     tag_mode = not tag_mode
