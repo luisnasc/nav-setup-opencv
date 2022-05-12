@@ -164,7 +164,8 @@ def create_seta(event):
         ids = [objects_to_delete.pop(), objects_to_delete.pop()]
         
         image_window.reset_canvas(ids)
-        txt_local = tkinter.simpledialog.askstring(title="Implantação TAG", prompt="Informe a descrição do local:")
+        txt_local = tkinter.simpledialog.askstring(title="Posicionando TAGs", prompt="Informe a descrição do local:")
+        #txt_local.grab_set() 
         
         if txt_local != None:
             obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
@@ -178,7 +179,7 @@ def create_seta(event):
         else:
             #apagar o ponto
             image_window.reset_canvas([objects_to_delete.pop()])
-
+        #txt_local.grab_release()
 
 def save_as_png(canvas,fileName):
     # save postscipt image 
@@ -201,7 +202,10 @@ shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
 
 def close_win():
-   root.destroy()
+    if tkinter.messagebox.askyesno("Confirmação", "Gostaria realmente de sair?"):
+        root.destroy()
+    else:
+        pass
 
 def ligar_tags():
     global tag_mode, txt_num_tag, cont_tag, flag_iniciou_tag
