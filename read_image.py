@@ -90,7 +90,7 @@ def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
 
-    global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans
+    global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans, contador_mouse_move
     canvas = event.widget
 
     mouseX, mouseY = 0,0
@@ -111,18 +111,20 @@ def click_esq_event(event):
         elif tag_mode:
             if not angle_mode:
                 angle_mode = True
-
+                contador_mouse_move = 0
                 point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
                 seta_p1 = (mouseX, mouseY)
                 #ponto
-                obj = canvas.create_line(seta_p1[0]+2, seta_p1[1], seta_p1[0]-2, seta_p1[1], width=3, fill='red')
+                obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p1[0], seta_p1[1], width=1, fill='blue')
                 objects_to_delete.append(obj)
+              
                 #cruz
                 obj = canvas.create_line(seta_p1[0]+30, seta_p1[1], seta_p1[0]-30, seta_p1[1], width=3, fill='green')
                 objects_to_delete.append(obj)
                 obj = canvas.create_line(seta_p1[0], seta_p1[1]+30, seta_p1[0], seta_p1[1]-30, width=3, fill='green')
-                objects_to_delete.append(obj)                
+                objects_to_delete.append(obj)  
+                
         else:
             point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
             click_p1 = [mouseX, mouseY]
@@ -146,11 +148,10 @@ def create_seta(event):
         mouseX = canvas.canvasx(event.x)
         mouseY = canvas.canvasy(event.y)
     except Exception as e:
-        print(e)
+        print(e)  
 
     if(botao_rotacionar):
         calcular_angulo_drop(event, click_p1, click_p1_trans, objects_to_delete)      
-
 
     if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
         angle_mode = False
@@ -161,16 +162,22 @@ def create_seta(event):
         seta_p2 = (mouseX, mouseY)
         
         #removendo a cruz
-        ids = [objects_to_delete.pop(), objects_to_delete.pop()]
+        ids = [objects_to_delete.pop(), objects_to_delete.pop(), objects_to_delete.pop()]
         
         image_window.reset_canvas(ids)
         txt_local = tkinter.simpledialog.askstring(title="Posicionando TAGs", prompt="Informe a descrição do local:")
-        #txt_local.grab_set() 
         
         if txt_local != None:
-            obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
+            x_fim = 10* np.cos(-theta)
+            y_fim = 10* np.sin(-theta)
+            obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p1[0]+x_fim, seta_p1[1]+y_fim, width=3, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj)
-            obj = canvas.create_text(seta_p1[0], seta_p1[1],fill="red",font="Times 15 bold", text=str(cont_tag).zfill(3)) 
+            # text=str(cont_tag).zfill(3)
+
+            x_fim = 10* np.cos(-theta+np.pi)
+            y_fim = 10* np.sin(-theta+np.pi)
+
+            obj = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font="Times 15 bold", text=str(cont_tag)) 
             objects_to_delete.append(obj)
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
@@ -180,6 +187,41 @@ def create_seta(event):
             #apagar o ponto
             image_window.reset_canvas([objects_to_delete.pop()])
         #txt_local.grab_release()
+
+
+
+def mouse_move_seta(event):
+    #mouseX,mouseY = event.x,event.y
+    shape = np.shape(img)
+    max_y, max_x  = shape[0], shape[1]
+    # max_y, max_x = np.shape(img)
+    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete, contador_mouse_move
+    
+    try:
+        canvas = event.widget
+        mouseX = canvas.canvasx(event.x)
+        mouseY = canvas.canvasy(event.y)
+    except Exception as e:
+        pass
+        #print(e)
+
+
+    if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
+            
+        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+
+        theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
+        seta_p2 = (mouseX, mouseY)
+        print(seta_p2, theta)
+        #removendo a cruz
+        if contador_mouse_move == 0:
+            obj = canvas.create_line(seta_p1[0]+3, seta_p1[1], seta_p1[0]-3, seta_p1[1], width=5, fill='red')
+            objects_to_delete.append(obj)      
+        image_window.reset_canvas([objects_to_delete.pop()])
+        obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
+        objects_to_delete.append(obj)
+        contador_mouse_move +=1
+
 
 def save_as_png(canvas,fileName):
     # save postscipt image 
@@ -409,5 +451,6 @@ button_close.place(x=10, y=100)
 root.bind("<Button 1>",click_esq_event)
 root.bind("<Button 3>",get_position_botao_dir)
 root.bind("<ButtonRelease-1>",create_seta)
+root.bind("<B1-Motion>",mouse_move_seta)
 
 root.mainloop()
