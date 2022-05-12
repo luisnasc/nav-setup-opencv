@@ -262,11 +262,16 @@ def salvar_tags():
     with open("tags.json", "w") as outfile:
         outfile.write(json_object)
 
-    save_as_png(canvas_ref,'tags_posicionadas')
-    button_graph.config(state="normal")
-    txt_num_tag.config(state="normal")
-    button_tag_salvar.config(state="disabled")
-    tkinter.messagebox.showinfo("Confirmação", "Tags posicionadas com sucesso!")
+
+    if tkinter.messagebox.askyesno("Confirmação", "TAGs posicionadas corretamente? Scroll retornado para a posição inicial? "):
+
+        save_as_png(canvas_ref,'tags_posicionadas')
+        button_graph.config(state="normal")
+        txt_num_tag.config(state="normal")
+        button_tag_salvar.config(state="disabled")
+        tkinter.messagebox.showinfo("Confirmação", "Tags posicionadas com sucesso!")
+    else :
+        pass
 
 
 def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
