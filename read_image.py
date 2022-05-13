@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
+
 from re import X
 import numpy as np
-import cv2, json
+import cv2
 import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw
 import math, json
 from PIL import Image, ImageTk
 from tkinter import ttk
@@ -129,11 +130,18 @@ def click_esq_event(event):
             point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
             click_p1 = [mouseX, mouseY]
             click_p1_trans = point
+
+            texto_pose = '{xx:.3f}, {yy:.3f}'
+            #check_rot.config(text=texto_pose.format(angulo = np.rad2deg(theta)))
+
             if(rotacionar):
                 ponto_rotacionado = rotate_position(point)
+                txt_pose.delete("1.0", tkinter.END)
+                txt_pose.insert('end', texto_pose.format(xx = ponto_rotacionado[0], yy = ponto_rotacionado[1]) )                
                 print(ponto_rotacionado)
             else:
-                print(point)
+                txt_pose.delete("1.0", tkinter.END)
+                txt_pose.insert('end', texto_pose.format(xx = point[0], yy = point[1]) )
 
 
 def create_seta(event):
@@ -168,19 +176,29 @@ def create_seta(event):
         txt_local = tkinter.simpledialog.askstring(title="Posicionando TAGs", prompt="Informe a descrição do local:")
         
         if txt_local != None:
-            x_fim = 10* np.cos(-theta)
-            y_fim = 10* np.sin(-theta)
-            obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p1[0]+x_fim, seta_p1[1]+y_fim, width=3, fill='blue', arrow=tkinter.LAST)
+            x_fim1 =  15*np.cos(-theta+np.pi)
+            y_fim1 = 15*np.sin(-theta+np.pi)
+
+            obj = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=7, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj)
             # text=str(cont_tag).zfill(3)
 
-            x_fim = 10* np.cos(-theta+np.pi)
-            y_fim = 10* np.sin(-theta+np.pi)
 
-            obj = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font="Times 15 bold", text=str(cont_tag)) 
+            if -0.6 >= theta >=-2.5:
+                x_fim = 25* np.cos(-theta+np.pi)
+                y_fim = 25* np.sin(-theta+np.pi)  
+                print('aqui')              
+            else:
+                x_fim = 34* np.cos(-theta+np.pi)
+                y_fim = 34* np.sin(-theta+np.pi)
+
+            obj = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font="Times 20 bold", text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj)
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
+            texto_pose = '{xx:.3f}, {yy:.3f}, {zz:.3f}'
+            txt_pose.delete("1.0", tkinter.END)
+            txt_pose.insert('end', texto_pose.format(xx = point1[0], yy = point1[1], zz = theta) )            
             print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
             cont_tag+=1
         else:
@@ -212,7 +230,12 @@ def mouse_move_seta(event):
 
         theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
         seta_p2 = (mouseX, mouseY)
-        print(seta_p2, theta)
+        print(point1, theta)
+
+        texto_pose = '{xx:.3f}, {yy:.3f}, {zz:.3f}'
+        txt_pose.delete("1.0", tkinter.END)
+        txt_pose.insert('end', texto_pose.format(xx = point1[0], yy = point1[1], zz = theta) )            
+
         #removendo a cruz
         if contador_mouse_move == 0:
             obj = canvas.create_line(seta_p1[0]+3, seta_p1[1], seta_p1[0]-3, seta_p1[1], width=5, fill='red')
@@ -235,13 +258,6 @@ def save_as_png(canvas,fileName):
 init_setup()
 
 
-img = cv2.imread(map_file, cv2.IMREAD_UNCHANGED)
-
-cv2.namedWindow('image')
-#cv2.setMouseCallback('image',draw_circle)
-img, global_origin = zoom(img, zoom_factor)
-shape = np.shape(img)
-altura, largura  = shape[0], shape[1]
 
 def close_win():
     if tkinter.messagebox.askyesno("Confirmação", "Gostaria realmente de sair?"):
@@ -252,18 +268,23 @@ def close_win():
 def ligar_tags():
     global tag_mode, txt_num_tag, cont_tag, flag_iniciou_tag
 
+
     if(not flag_iniciou_tag):
         cont_tag = int(txt_num_tag.get("1.0","end-1c"))
 
     flag_iniciou_tag = 1
 
     if button_tag.config('text')[-1] == 'Concluir \nTAGs':
+        txt_num_tag.config(state="normal")
+        txt_num_tag.delete("1.0", tkinter.END)
+        txt_num_tag.insert('end', str(cont_tag))
+        txt_num_tag.config(state="disabled")
         button_tag.config(text='Posicionar TAGs', background=defaultbg)
         tag_mode = False
         #txt_num_tag.config(state="normal")
         button_tag_salvar.config(state="normal")
         button_reset.config(state="normal")
-       
+        #cont_tag = int(txt_num_tag.get("1.0","end-1c"))
     else:
         button_tag.config(text='Concluir \nTAGs', background='blue')
         tag_mode = True
@@ -295,23 +316,21 @@ def reset_win(event=None):
 
 
 def salvar_tags():
-    global cont_tag, image_window, flag_iniciou_tag
-    flag_iniciou_tag = 0
-    cont_tag = int(txt_num_tag.get("1.0","end-1c"))
-    canvas_ref = image_window.cnvs
-
-    json_object = json.dumps(dict_tags, indent = 4)
-    with open("tags.json", "w") as outfile:
-        outfile.write(json_object)
-
-
+    global cont_tag, image_window, flag_iniciou_tag, txt_num_tag
     if tkinter.messagebox.askyesno("Confirmação", "TAGs posicionadas corretamente? Scroll retornado para a posição inicial? "):
+        flag_iniciou_tag = 0
+        canvas_ref = image_window.cnvs
+
+        json_object = json.dumps(dict_tags, indent = 4)
+        with open("tags.json", "w") as outfile:
+            outfile.write(json_object)
 
         save_as_png(canvas_ref,'tags_posicionadas')
         button_graph.config(state="normal")
         txt_num_tag.config(state="normal")
         button_tag_salvar.config(state="disabled")
         tkinter.messagebox.showinfo("Confirmação", "Tags posicionadas com sucesso!")
+        
     else :
         pass
 
@@ -374,7 +393,10 @@ def get_position_botao_dir(event): #
         mouseY = canvas.canvasy(event.y)
     except Exception as e:
         print(e)
-    print(transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y))
+    point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+    texto_pose = '{xx:.3f}, {yy:.3f}'
+    txt_pose.delete("1.0", tkinter.END)
+    txt_pose.insert('end', texto_pose.format(xx = point1[0], yy = point1[1]) )      
 
 
 def calc_rotacao():
@@ -392,6 +414,21 @@ def check_angulo_marcado():
         print('Nao Rotacionar')
         rotacionar = False
 
+
+##
+##  ::: PRINCIPAL ::: 
+##
+
+img = cv2.imread(map_file, cv2.IMREAD_UNCHANGED)
+
+cv2.namedWindow('image')
+#cv2.setMouseCallback('image',draw_circle)
+img, global_origin = zoom(img, zoom_factor)
+shape = np.shape(img)
+altura, largura  = shape[0], shape[1]
+
+
+
 root = tkinter.Tk()
 root.title("Vixsystem - Setup Navegação")
 root.attributes('-zoomed', True)
@@ -399,11 +436,12 @@ defaultbg = root.cget('bg')
 
 im = Image.fromarray(img)
 imgtk = ImageTk.PhotoImage(image=im)
-image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=largura, height=altura)
+print(largura)
+image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=altura)
 image_window.pack(side="right")
 
-labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200)
-labelframe.pack( anchor="nw" )
+labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200, labelanchor="n")
+labelframe.pack( anchor="nw", padx=20,  pady=10 )
  
 
 lbl_num_tag = tkinter.Label(labelframe, text="Nº Tag Inicial")
@@ -421,14 +459,25 @@ button_tag_salvar.place(x=10, y=110)
 
 
 
-labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200)
-labelframe_grafo.pack( anchor="w" )
+
+labelframe_pose = tkinter.LabelFrame(root, text="Pose do robô", labelanchor="n", width=200, height=85)
+labelframe_pose.pack( anchor="w", padx=20 )
+
+
+txt_pose = tkinter.Text(labelframe_pose, height = 2, width = 20, end="0", font="Times 14 bold")
+txt_pose.place(x=5, y=10)
+txt_pose.insert('end', '0.000, 0.000, 0.000')
+
+
+
+labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200, labelanchor="n")
+labelframe_grafo.pack( anchor="w", padx=20 )
 
 button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
 button_graph.place(x=10, y=10)
 
-labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150)
-labelframe_rotacionar.pack( anchor="w" )
+labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
+labelframe_rotacionar.pack( anchor="w", padx=20 )
 
 button_rotacao = tkinter.Button(labelframe_rotacionar, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
 button_rotacao.place(x=10, y=15)
@@ -437,8 +486,8 @@ flag_rot = tkinter.IntVar()
 check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
 check_rot.place(x=10, y=90)
 
-labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200)
-labelframe_geral.pack( anchor="w" )
+labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200, labelanchor="n")
+labelframe_geral.pack( anchor="w", padx=20 )
 
 button_reset = tkinter.Button(labelframe_geral, text="Resetar", width=10, height=3, command=reset_win)
 button_reset.place(x=10, y=20)
@@ -446,11 +495,19 @@ button_reset.place(x=10, y=20)
 button_close = tkinter.Button(labelframe_geral, text="Sair", width=10, height=3, command=close_win)
 button_close.place(x=10, y=100)
 
+def mouse_scroll(event):
+    if event.num == 4 and event.state == 20:
+        print('zoom in')
+    if event.num == 5 and event.state == 20:
+        print('zoom out')
 
-
+#<Double-Button-1
 root.bind("<Button 1>",click_esq_event)
+
 root.bind("<Button 3>",get_position_botao_dir)
 root.bind("<ButtonRelease-1>",create_seta)
 root.bind("<B1-Motion>",mouse_move_seta)
+root.bind_all("<Button-4>", mouse_scroll)
+root.bind_all("<Button-5>", mouse_scroll)
 
 root.mainloop()
