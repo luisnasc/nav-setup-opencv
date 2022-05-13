@@ -27,14 +27,28 @@ class ScrollableImage(tkinter.Frame):
         # Assign the region to be scrolled 
         self.cnvs.config(scrollregion=self.cnvs.bbox('all'))
         self.cnvs.bind_class(self.cnvs, "<MouseWheel>", self.mouse_scroll)
+        self.cnvs.bind_class(self.cnvs, "<Button-4>", self.mouse_scroll)
+        self.cnvs.bind_class(self.cnvs, "<Button-5>", self.mouse_scroll)
+        self.cnvs.bind_class(self.cnvs, "<Button-2>", self.mouse_scroll)
 
     def mouse_scroll(self, evt):
-        if evt.state == 0 :
-            self.cnvs.yview_scroll(-1*(evt.delta), 'units') # For MacOS
-            self.cnvs.yview_scroll(int(-1*(evt.delta/120)), 'units') # For windows
-        if evt.state == 1:
-            self.cnvs.xview_scroll(-1*(evt.delta), 'units') # For MacOS
-            self.cnvs.xview_scroll(int(-1*(evt.delta/120)), 'units') # For windows
+        #print(evt.state)
+        if evt.num==5: #evt.state == 0 :
+            if evt.state == 16:
+                self.cnvs.yview_scroll(5, 'units')
+            elif evt.state == 17:
+                self.cnvs.xview_scroll(5, 'units')
+            #elif evt.state == 20:
+            #    print('zoom out')
+        if evt.num == 2:
+            print('meioooo')
+        if evt.num==4: #evt.state == 1:
+            if evt.state == 16:
+                self.cnvs.yview_scroll(-5, 'units')
+            elif evt.state == 17:
+                self.cnvs.xview_scroll(-5, 'units') # For MacOS
+            #elif evt.state == 20:
+            #    print('zoom in')
 
     def reset_canvas(self, ids):
         for i in ids:
