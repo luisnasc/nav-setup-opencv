@@ -105,9 +105,11 @@ def click_esq_event(event):
 
         if graph_mode: # draw circles
             point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+            
+            radius_graph = int(txt_raio.get("1.0","end-1c"))
 
             print(point)
-            c = create_circle(mouseX, mouseY, radius*zoom_factor, canvas)
+            c = create_circle(mouseX, mouseY, radius_graph, canvas)
             objects_to_delete.append(c)
         elif tag_mode:
             if not angle_mode:
@@ -452,13 +454,12 @@ txt_num_tag.place(x=120, y=10)
 txt_num_tag.insert('end', '0')
 
 button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=10, height=2, command=ligar_tags, wraplength=90)
-button_tag.place(x=10, y=50)
+button_tag.place(x=40, y=50)
 
 button_tag_salvar = tkinter.Button(labelframe, text="Salvar TAGs", width=10, height=2, background='lightgreen', command=salvar_tags, state="disabled", wraplength=90)
-button_tag_salvar.place(x=10, y=110)
+button_tag_salvar.place(x=40, y=110)
 
-
-
+###### Pose robo
 
 labelframe_pose = tkinter.LabelFrame(root, text="Pose do robô", labelanchor="n", width=200, height=85)
 labelframe_pose.pack( anchor="w", padx=20 )
@@ -468,19 +469,30 @@ txt_pose = tkinter.Text(labelframe_pose, height = 2, width = 20, end="0", font="
 txt_pose.place(x=5, y=10)
 txt_pose.insert('end', '0.000, 0.000, 0.000')
 
-
+###   Grafo
 
 labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200, labelanchor="n")
 labelframe_grafo.pack( anchor="w", padx=20 )
 
-button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
-button_graph.place(x=10, y=10)
 
+lbl_raio = tkinter.Label(labelframe_grafo, text="Radio do círculo")
+lbl_raio.place(x=10, y=10)
+
+txt_raio = tkinter.Text(labelframe_grafo, height = 1, width = 5, end="0")
+txt_raio.place(x=120, y=10)
+txt_raio.insert('end', '5')
+
+
+button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
+button_graph.place(x=40, y=50)
+
+
+##### Rotacionar
 labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
 labelframe_rotacionar.pack( anchor="w", padx=20 )
 
 button_rotacao = tkinter.Button(labelframe_rotacionar, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
-button_rotacao.place(x=10, y=15)
+button_rotacao.place(x=40, y=15)
 
 flag_rot = tkinter.IntVar()
 check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
