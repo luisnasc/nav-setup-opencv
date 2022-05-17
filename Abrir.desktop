@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=ProgramName
+Comment=This is my comment
+Exec=python3 /home/luisbruno/Documentos/app-tag-position/read_image.py
+Icon=/home/luisbruno/Documentos/app-tag-position/icon.png
+Path=/home/luisbruno/Documentos/app-tag-position/
+Terminal=true
+Type=Application
+Categories=Utility;Application;
