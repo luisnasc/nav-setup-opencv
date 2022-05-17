@@ -32,21 +32,21 @@ class ScrollableImage(tkinter.Frame):
         self.cnvs.bind_class(self.cnvs, "<Button-2>", self.mouse_scroll)
 
     def mouse_scroll(self, evt):
-        #print(evt.state)
+        passo = 3
         if evt.num==5: #evt.state == 0 :
             if evt.state == 16:
-                self.cnvs.yview_scroll(5, 'units')
+                self.cnvs.yview_scroll(passo, 'units')
             elif evt.state == 17:
-                self.cnvs.xview_scroll(5, 'units')
+                self.cnvs.xview_scroll(passo, 'units')
             #elif evt.state == 20:
             #    print('zoom out')
         if evt.num == 2:
             print('meioooo')
         if evt.num==4: #evt.state == 1:
             if evt.state == 16:
-                self.cnvs.yview_scroll(-5, 'units')
+                self.cnvs.yview_scroll(-passo, 'units')
             elif evt.state == 17:
-                self.cnvs.xview_scroll(-5, 'units') # For MacOS
+                self.cnvs.xview_scroll(-passo, 'units') # For MacOS
             #elif evt.state == 20:
             #    print('zoom in')
 
