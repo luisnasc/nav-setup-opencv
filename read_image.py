@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from re import X
+# from re import X
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 from tkinter import ttk
 import tkinter
 #from tkinter import *
+import tkinter.simpledialog
 from ScrollableImage import *
 
 global mouseX, mouseY
