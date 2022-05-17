@@ -35,6 +35,8 @@ botao_rotacionar = False
 angulo_rotacionar = 0.0
 rotacionar = False
 click_p1 = 0
+count_scale = 1
+global_origin_last = []
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
@@ -52,7 +54,7 @@ init_setup()
 
 
 
-def zoom(img, zoom_factor):
+def zoom(img, zoom_factor, global_origin):
     global_origin_zoom = np.dot(global_origin,zoom_factor)
     return cv2.resize(img, None, fx=zoom_factor, fy=zoom_factor), global_origin_zoom
 
@@ -71,7 +73,6 @@ def create_circle(x, y, r, canvasName): #center coordinates, radius
 
 
 def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
-
     theta = np.pi
     point = np.transpose([mouseX, mouseY, 1])
     c, s = np.cos(float(theta)),np.sin(float(theta))
@@ -91,7 +92,7 @@ def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
-
+    print(max_x)
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans, contador_mouse_move
     canvas = event.widget
 
@@ -423,10 +424,12 @@ def check_angulo_marcado():
 ##
 
 img = cv2.imread(map_file, cv2.IMREAD_UNCHANGED)
-
-cv2.namedWindow('image')
+original_img = img
+#cv2.namedWindow('image')
 #cv2.setMouseCallback('image',draw_circle)
-img, global_origin = zoom(img, zoom_factor)
+global_origin_default = global_origin
+global_origin_last = global_origin
+img, global_origin = zoom(img, zoom_factor, global_origin_default)
 shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
 
@@ -439,8 +442,8 @@ defaultbg = root.cget('bg')
 
 im = Image.fromarray(img)
 imgtk = ImageTk.PhotoImage(image=im)
-print(largura)
-image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=altura)
+
+image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=1200)
 image_window.pack(side="right")
 
 labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200, labelanchor="n")
@@ -509,10 +512,47 @@ button_close = tkinter.Button(labelframe_geral, text="Sair", width=10, height=3,
 button_close.place(x=10, y=100)
 
 def mouse_scroll(event):
+    global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last
+    
+    canvas = event.widget
     if event.num == 4 and event.state == 20:
-        print('zoom in')
+        #canvas.delete("all")
+
+        count_scale+=1
+        zoom_factor = count_scale
+        print(f'Escala {count_scale}')
+        global_origin_last = global_origin
+        img, global_origin = zoom(original_img, count_scale, global_origin_default)
+        shape = np.shape(img)
+        altura, largura  = shape[0], shape[1]
+
+        im = Image.fromarray(img)
+        imgtk = ImageTk.PhotoImage(image=im)
+        #print('foi aqui')
+
+        image_window.redraw_canvas(1, imgtk)
+        #canvas.create_image(0, 0, anchor='nw', image=imgtk)
+
+
     if event.num == 5 and event.state == 20:
         print('zoom out')
+        #canvas.delete("all")
+        count_scale-=1
+        zoom_factor = count_scale
+        if(count_scale < 1):
+            count_scale = 1
+        else:
+            global_origin_last = global_origin
+            img, global_origin = zoom(original_img, count_scale, global_origin_default)
+            shape = np.shape(img)
+            altura, largura  = shape[0], shape[1]
+
+            im = Image.fromarray(img)
+            imgtk = ImageTk.PhotoImage(image=im)
+
+            image_window.redraw_canvas(1, imgtk)
+            
+
 
 #<Double-Button-1
 root.bind("<Button 1>",click_esq_event)

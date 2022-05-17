@@ -1,12 +1,13 @@
 import tkinter
 
 class ScrollableImage(tkinter.Frame):
+    
     def __init__(self, master=None, **kw):
         self.image = kw.pop('image', None)
         sw = kw.pop('scrollbarwidth', 10)
         super(ScrollableImage, self).__init__(master=master, **kw)
         self.cnvs = tkinter.Canvas(self, highlightthickness=0, **kw)
-        self.cnvs.create_image(0, 0, anchor='nw', image=self.image)
+        self.container = self.cnvs.create_image(0, 0, anchor='nw', image=self.image)
         #self.cnvs.place(relx=0.0, rely=1.0, anchor=SW)
 
         # Vertical and Horizontal scrollbars
@@ -31,6 +32,11 @@ class ScrollableImage(tkinter.Frame):
         self.cnvs.bind_class(self.cnvs, "<Button-5>", self.mouse_scroll)
         self.cnvs.bind_class(self.cnvs, "<Button-2>", self.mouse_scroll)
 
+    def redraw_canvas(self, ids, resized_image):
+        self.cnvs.itemconfig(self.container, image=resized_image)
+        self.cnvs.config(scrollregion=self.cnvs.bbox('all'))
+        
+
     def mouse_scroll(self, evt):
         passo = 3
         if evt.num==5: #evt.state == 0 :
@@ -38,21 +44,28 @@ class ScrollableImage(tkinter.Frame):
                 self.cnvs.yview_scroll(passo, 'units')
             elif evt.state == 17:
                 self.cnvs.xview_scroll(passo, 'units')
-            #elif evt.state == 20:
-            #    print('zoom out')
-        if evt.num == 2:
+        elif evt.num == 2:
             print('meioooo')
-        if evt.num==4: #evt.state == 1:
+        elif evt.num==4: #evt.state == 1:
             if evt.state == 16:
                 self.cnvs.yview_scroll(-passo, 'units')
             elif evt.state == 17:
                 self.cnvs.xview_scroll(-passo, 'units') # For MacOS
-            #elif evt.state == 20:
-            #    print('zoom in')
+
+        # if evt.num == 4 and evt.state == 20:
+        #     print('zoom in')
+        #     self.cnvs.scale("all", evt.x, evt.y, 1.1, 1.1)
+        #     self.cnvs.configure(scrollregion = self.cnvs.bbox("all"))
+
+        # if evt.num == 5 and evt.state == 20:
+        #     print('zoom out')                
+        #     self.cnvs.scale("all", evt.x, evt.y, 0.9, 0.9)
+        #     self.cnvs.configure(scrollregion = self.cnvs.bbox("all")) 
 
     def reset_canvas(self, ids):
         for i in ids:
             self.cnvs.delete(i)
+
 
 '''
 root = tkinter.Tk()
