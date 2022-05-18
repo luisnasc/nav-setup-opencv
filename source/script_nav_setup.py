@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # from re import X
+from errno import EUCLEAN
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ global zoom_factor, radius, map_file
 zoom_factor=1
 radius=10
 global_origin=[]
-map_file = 'map.png'
+map_file = '../map.png'
 resolution = 1
 tag_mode = False
 draw_mode = False
@@ -37,16 +38,16 @@ rotacionar = False
 click_p1 = 0
 count_scale = 1
 global_origin_last = []
+dict_objects = {}
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('config.json')
+    f = open('../config.json')
     data = json.load(f)
-    map_file = data['map_file']
+    map_file = '../'+data['map_file']
     resolution = data['resolution']
-    radius = data['radius']
     global_origin = data['global_origin']
     zoom_factor = data['scale']
 
@@ -57,6 +58,7 @@ init_setup()
 def zoom(img, zoom_factor, global_origin):
     global_origin_zoom = np.dot(global_origin,zoom_factor)
     return cv2.resize(img, None, fx=zoom_factor, fy=zoom_factor), global_origin_zoom
+
 
 def trans_coord(point):
     x = global_origin[0] + (-1) * point[0]
@@ -92,7 +94,7 @@ def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
-    print(max_x)
+    #print(max_x)
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans, contador_mouse_move
     canvas = event.widget
 
@@ -110,7 +112,7 @@ def click_esq_event(event):
             
             radius_graph = int(txt_raio.get("1.0","end-1c"))
 
-            print(point)
+            #print(point)
             c = create_circle(mouseX, mouseY, radius_graph, canvas)
             objects_to_delete.append(c)
         elif tag_mode:
@@ -142,7 +144,7 @@ def click_esq_event(event):
                 ponto_rotacionado = rotate_position(point)
                 txt_pose.delete("1.0", tkinter.END)
                 txt_pose.insert('end', texto_pose.format(xx = ponto_rotacionado[0], yy = ponto_rotacionado[1]) )                
-                print(ponto_rotacionado)
+                #print(ponto_rotacionado)
             else:
                 txt_pose.delete("1.0", tkinter.END)
                 txt_pose.insert('end', texto_pose.format(xx = point[0], yy = point[1]) )
@@ -153,7 +155,7 @@ def create_seta(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
     # max_y, max_x = np.shape(img)
-    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete
+    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete, dict_objects, count_scale
     
     try:
         canvas = event.widget
@@ -183,21 +185,22 @@ def create_seta(event):
             x_fim1 =  15*np.cos(-theta+np.pi)
             y_fim1 = 15*np.sin(-theta+np.pi)
 
-            obj = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=7, fill='blue', arrow=tkinter.LAST)
-            objects_to_delete.append(obj)
+            obj_seta = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=3+count_scale, fill='blue', arrow=tkinter.LAST)
+            objects_to_delete.append(obj_seta)
+            dict_objects[str(obj_seta)] = ['seta', seta_p1]
             # text=str(cont_tag).zfill(3)
-
 
             if -0.6 >= theta >=-2.5:
                 x_fim = 25* np.cos(-theta+np.pi)
                 y_fim = 25* np.sin(-theta+np.pi)  
-                print('aqui')              
+                #print('aqui')              
             else:
                 x_fim = 34* np.cos(-theta+np.pi)
                 y_fim = 34* np.sin(-theta+np.pi)
-
-            obj = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font="Times 20 bold", text=str(cont_tag).zfill(3)) 
-            objects_to_delete.append(obj)
+            fonte = "Times "+str(10+count_scale)+" bold"
+            obj_valor = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font=fonte, text=str(cont_tag).zfill(3)) 
+            objects_to_delete.append(obj_valor)
+            dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim]]
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
             texto_pose = '{xx:.3f}, {yy:.3f}, {zz:.3f}'
@@ -234,7 +237,7 @@ def mouse_move_seta(event):
 
         theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
         seta_p2 = (mouseX, mouseY)
-        print(point1, theta)
+        #print(point1, theta)
 
         texto_pose = '{xx:.3f}, {yy:.3f}, {zz:.3f}'
         txt_pose.delete("1.0", tkinter.END)
@@ -310,10 +313,11 @@ def ligar_grafos():
         graph_mode = True
 
 def reset_win(event=None):
-    global image_window, im, imgtk, root, cont_tag, flag_iniciou_tag, dict_tags
+    global image_window, im, imgtk, root, cont_tag, flag_iniciou_tag, dict_tags, dict_objects
     image_window.reset_canvas(objects_to_delete)
     flag_iniciou_tag=0
     dict_tags = {}
+    dict_objects = {}
     cont_tag = int(txt_num_tag.get("1.0","end-1c"))
     txt_num_tag.config(state="normal")
     button_graph.config(state="normal")
@@ -367,7 +371,6 @@ def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
         texto_check = 'Rotacionar {angulo:.3f} °'
         check_rot.config(text=texto_check.format(angulo = np.rad2deg(theta)))
 
-        print(theta)
     except Exception as e:
         print(e)
 
@@ -380,7 +383,6 @@ def rotate_position(point):
         [c, -s, s], # Homogeneous Transformation Matrix
         [s, c, 0],
         [0, 0, 1]])
-        #print(point)
 
         ponto =  np.dot(HT, point)
         return ponto[0], ponto[1]
@@ -511,18 +513,64 @@ button_reset.place(x=10, y=20)
 button_close = tkinter.Button(labelframe_geral, text="Sair", width=10, height=3, command=close_win)
 button_close.place(x=10, y=100)
 
+def eucl_dist(point1, point2):
+    sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
+    return np.sqrt(sum_sq)
+
+def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
+    #c = canvas
+    
+
+    if dict_obj.get( str(obj_id) )[0] == 'seta':
+        print('aumentando seta')
+        width = 3+val_zoom
+        x0 = c.bbox(obj_id)[0] # x-coordinate of the left side of the text
+        c.itemconfigure(obj_id, width=width)
+        # shrink to fit
+        height = c.winfo_height() # canvas height
+        y1 = c.bbox(obj_id)[3] # y-coordinate of the bottom of the text
+        while y1 > height:# and fontsize > 1:
+            #fontsize -= 1
+            c.itemconfigure(obj_id, width=width)
+            y1 = c.bbox(obj_id)[3]
+    elif dict_obj.get( str(obj_id) )[0] == 'valor':
+        print('aumentando valor')
+        fontsize = 10+val_zoom
+        font = "Times " + str(fontsize) + " bold"
+        x0 = c.bbox(obj_id)[0] # x-coordinate of the left side of the text
+        c.itemconfigure(obj_id, width=c.winfo_width() - x0, font=font)
+        # shrink to fit
+        height = c.winfo_height() # canvas height
+        y1 = c.bbox(obj_id)[3] # y-coordinate of the bottom of the text
+        while y1 > height and fontsize > 1:
+            fontsize -= 1
+            c.itemconfigure(obj_id, font=font)
+            y1 = c.bbox(obj_id)[3]
+
 def mouse_scroll(event):
     global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last
     
     canvas = event.widget
     if event.num == 4 and event.state == 20:
-        #canvas.delete("all")
-
         count_scale+=1
         zoom_factor = count_scale
-        print(f'Escala {count_scale}')
         global_origin_last = global_origin
         img, global_origin = zoom(original_img, count_scale, global_origin_default)
+
+        #shape_old = np.shape(original_img)
+        #altura_old, largura_old  = shape_old[0], shape_old[1]
+
+        
+
+        dif_x, dif_y = abs(altura_old-altura), abs(largura_old-largura)
+        print(dif_x, dif_y)
+        for obj_id in objects_to_delete:
+            #canvas.itemcget(obj_id, )
+            print(canvas.type(obj_id))
+            if str(obj_id) in list(dict_objects.keys()) and canvas.type(obj_id) in ['line', 'text']:
+                resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
+                canvas.move(obj_id, dif_y, dif_y)
+
         shape = np.shape(img)
         altura, largura  = shape[0], shape[1]
 
@@ -546,6 +594,16 @@ def mouse_scroll(event):
             img, global_origin = zoom(original_img, count_scale, global_origin_default)
             shape = np.shape(img)
             altura, largura  = shape[0], shape[1]
+
+            shape_old = np.shape(original_img)
+            altura_old, largura_old  = shape_old[0], shape_old[1]
+            
+            diferenca = global_origin_default-global_origin
+
+            for obj_id in objects_to_delete:
+                if str(obj_id) in list(dict_objects.keys()):
+                    print('foi')
+                    resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
 
             im = Image.fromarray(img)
             imgtk = ImageTk.PhotoImage(image=im)

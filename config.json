@@ -2,6 +2,5 @@
     "map_file" : "map.png",
     "resolution" : 0.1,
     "scale" : 1, 
-    "radius" : 50,
     "global_origin" : [-13.80, -13.80]
 }
