@@ -26,6 +26,8 @@ tag_mode = False
 draw_mode = False
 drawing = False
 graph_mode = False
+distance_mode = False
+distance2_mode = False
 count_click = 0
 angle_mode = False
 dict_tags = {}
@@ -44,7 +46,7 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('../config.json')
+    f = open('../config_aeroporto_vix.json')
     data = json.load(f)
     map_file = '../'+data['map_file']
     resolution = data['resolution']
@@ -94,10 +96,18 @@ def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
-    #print(max_x)
-    global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1, click_p1_trans, contador_mouse_move
+    print(event.state)
+
+
+    global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
+    global click_p1_trans, contador_mouse_move, distance2_mode, distance_mode
     canvas = event.widget
 
+    if event.state == 17:
+        distance_mode = True
+    elif event.state != 17 and button_dist.config('text')[-1] != 'Concluir':
+        distance_mode = False
+    
     mouseX, mouseY = 0,0
     try:
         mouseX = canvas.canvasx(event.x)
@@ -131,7 +141,12 @@ def click_esq_event(event):
                 objects_to_delete.append(obj)
                 obj = canvas.create_line(seta_p1[0], seta_p1[1]+30, seta_p1[0], seta_p1[1]-30, width=3, fill='green')
                 objects_to_delete.append(obj)  
-                
+        elif distance_mode:
+            if not distance2_mode:
+                distance2_mode = True
+                point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+                seta_p1 = (mouseX, mouseY)
+                contador_mouse_move = 0                    
         else:
             point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
             click_p1 = [mouseX, mouseY]
@@ -155,7 +170,7 @@ def create_seta(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
     # max_y, max_x = np.shape(img)
-    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete, dict_objects, count_scale
+    global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete, dict_objects, count_scale, distance_mode, distance2_mode
     
     try:
         canvas = event.widget
@@ -167,7 +182,7 @@ def create_seta(event):
     if(botao_rotacionar):
         calcular_angulo_drop(event, click_p1, click_p1_trans, objects_to_delete)      
 
-    if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
+    if (angle_mode and str(canvas) == '.!scrollableimage.!canvas'): # Desenho seta orientação tag
         angle_mode = False
             
         point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
@@ -208,10 +223,31 @@ def create_seta(event):
             txt_pose.insert('end', texto_pose.format(xx = point1[0], yy = point1[1], zz = theta) )            
             print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
             cont_tag+=1
+
+
+
         else:
             #apagar o ponto
             image_window.reset_canvas([objects_to_delete.pop()])
         #txt_local.grab_release()
+
+    elif (distance2_mode and str(canvas) == '.!scrollableimage.!canvas'):
+        distance2_mode = False
+            
+        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+
+        theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
+        seta_p2 = (mouseX, mouseY)
+        
+
+        texto_pose = '{xx:.3f}'
+        dist_final = eucl_dist(point2[0:2], point1[0:2])
+        txt_dist.delete("1.0", tkinter.END)
+        txt_dist.insert('end', texto_pose.format(xx = dist_final) )            
+        print(f'Distancia: {dist_final}')
+        #objects_to_delete.append(obj_seta)
+        image_window.reset_canvas([objects_to_delete.pop()])
+
 
 
 
@@ -251,6 +287,25 @@ def mouse_move_seta(event):
         obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
         objects_to_delete.append(obj)
         contador_mouse_move +=1
+    elif distance2_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação 
+        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+
+        theta = math.atan2(point2[1]-point1[1], point2[0]-point1[0])
+        seta_p2 = (mouseX, mouseY)
+        #print(point1, theta)
+        dist_final = eucl_dist(point2[0:2], point1[0:2])
+        texto_pose = '{xx:.3f}'
+        txt_dist.delete("1.0", tkinter.END)
+        txt_dist.insert('end', texto_pose.format(xx = dist_final) )            
+
+        #removendo a cruz
+        if contador_mouse_move == 0:
+            obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p1[0], seta_p1[1], width=1, fill='red')
+            objects_to_delete.append(obj)      
+        image_window.reset_canvas([objects_to_delete.pop()])
+        obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='green', arrow=tkinter.BOTH)
+        objects_to_delete.append(obj)
+        contador_mouse_move +=1        
 
 
 def save_as_png(canvas,fileName):
@@ -261,6 +316,13 @@ def save_as_png(canvas,fileName):
     # use PIL to convert to PNG 
     img = Image.open(fileName + '.eps') 
     img.save(fileName + '.png', 'png') 
+
+
+def draw_point(initial_point, canvas):
+    python_green = "#476042"
+    x1, y1 = (initial_point[0] - 3), (initial_point[1] - 3)
+    x2, y2 = (initial_point[0] + 3), (initial_point[1] + 3)
+    canvas.create_oval(x1, y1, x2, y2, fill=python_green)
 
 init_setup()
 
@@ -311,6 +373,16 @@ def ligar_grafos():
     else:
         button_graph.config(text='Concluir \nGrafo', background='blue')
         graph_mode = True
+
+def calc_distance_btn():
+    global distance_mode
+    if button_dist.config('text')[-1] == 'Concluir':
+        button_dist.config(text='Calcular distância', background=defaultbg)
+        distance_mode = False
+    else:
+        button_dist.config(text='Concluir', background='blue')
+        distance_mode = True
+
 
 def reset_win(event=None):
     global image_window, im, imgtk, root, cont_tag, flag_iniciou_tag, dict_tags, dict_objects
@@ -448,6 +520,8 @@ imgtk = ImageTk.PhotoImage(image=im)
 image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=1200)
 image_window.pack(side="right")
 
+#draw_point(global_origin, image_window.cnvs)
+
 labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200, labelanchor="n")
 labelframe.pack( anchor="nw", padx=20,  pady=10 )
  
@@ -475,7 +549,25 @@ txt_pose = tkinter.Text(labelframe_pose, height = 2, width = 20, end="0", font="
 txt_pose.place(x=5, y=10)
 txt_pose.insert('end', '0.000, 0.000, 0.000')
 
-###   Grafo
+
+###### Calcular Distância
+
+labelframe_dist = tkinter.LabelFrame(root, text="Cálculo de distância", labelanchor="n", width=200, height=90)
+labelframe_dist.pack( anchor="w", padx=20, pady=10 )
+
+button_dist = tkinter.Button(labelframe_dist, text="Calcular Distância", width=8, height=2, wraplength=90, command=calc_distance_btn)
+button_dist.place(x=8, y=10)
+
+txt_dist = tkinter.Text(labelframe_dist, height = 1, width = 7, end="0", font="Times 13 bold")
+txt_dist.place(x=105, y=20)
+txt_dist.insert('end', '0.000')
+
+
+lbl_dist = tkinter.Label(labelframe_dist, text="m")
+lbl_dist.place(x=175, y=20)
+
+
+#####   Grafo
 
 labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200, labelanchor="n")
 labelframe_grafo.pack( anchor="w", padx=20 )
@@ -522,7 +614,7 @@ def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
     
 
     if dict_obj.get( str(obj_id) )[0] == 'seta':
-        print('aumentando seta')
+        # print('aumentando seta')
         width = 3+val_zoom
         x0 = c.bbox(obj_id)[0] # x-coordinate of the left side of the text
         c.itemconfigure(obj_id, width=width)
@@ -534,7 +626,7 @@ def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
             c.itemconfigure(obj_id, width=width)
             y1 = c.bbox(obj_id)[3]
     elif dict_obj.get( str(obj_id) )[0] == 'valor':
-        print('aumentando valor')
+        # print('aumentando valor')
         fontsize = 10+val_zoom
         font = "Times " + str(fontsize) + " bold"
         x0 = c.bbox(obj_id)[0] # x-coordinate of the left side of the text
@@ -550,6 +642,9 @@ def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
 def mouse_scroll(event):
     global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last
     
+    if flag_iniciou_tag == 1:
+        print('Finalizar esse processo')
+
     canvas = event.widget
     if event.num == 4 and event.state == 20:
         count_scale+=1
@@ -557,22 +652,38 @@ def mouse_scroll(event):
         global_origin_last = global_origin
         img, global_origin = zoom(original_img, count_scale, global_origin_default)
 
-        #shape_old = np.shape(original_img)
-        #altura_old, largura_old  = shape_old[0], shape_old[1]
-
-        
-
-        dif_x, dif_y = abs(altura_old-altura), abs(largura_old-largura)
-        print(dif_x, dif_y)
-        for obj_id in objects_to_delete:
-            #canvas.itemcget(obj_id, )
-            print(canvas.type(obj_id))
-            if str(obj_id) in list(dict_objects.keys()) and canvas.type(obj_id) in ['line', 'text']:
-                resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
-                canvas.move(obj_id, dif_y, dif_y)
 
         shape = np.shape(img)
         altura, largura  = shape[0], shape[1]
+
+        shape_old = np.shape(original_img)
+        altura_old, largura_old  = shape_old[0], shape_old[1]
+
+        distancia = eucl_dist(shape, shape_old)
+
+        for obj_id in objects_to_delete:
+            if str(obj_id) in list(dict_objects.keys()) and canvas.type(obj_id) in ['line', 'text']:
+
+                #print(obj_id)
+                #print(dict_objects.get(str(obj_id)))
+                position = dict_objects.get(str(obj_id))[1]
+                print('Escala', count_scale)
+                print('posicao', position)
+                position_final = np.dot(position, count_scale)
+                # distancia = eucl_dist(position, position_final)
+                dif_x, dif_y = (position_final[0]-position[0]), (position_final[1]-position[1])
+
+                resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
+
+
+                #image_window.reset_canvas([objects_to_delete.pop()])
+                #obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
+                #objects_to_delete.append(obj)
+
+
+                canvas.move(obj_id, dif_x, dif_y)
+                #canvas.itemconfigure(obj_id, width=width)
+
 
         im = Image.fromarray(img)
         imgtk = ImageTk.PhotoImage(image=im)
@@ -596,9 +707,7 @@ def mouse_scroll(event):
             altura, largura  = shape[0], shape[1]
 
             shape_old = np.shape(original_img)
-            altura_old, largura_old  = shape_old[0], shape_old[1]
             
-            diferenca = global_origin_default-global_origin
 
             for obj_id in objects_to_delete:
                 if str(obj_id) in list(dict_objects.keys()):
