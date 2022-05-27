@@ -1,0 +1,6 @@
+{
+    "map_file" : "initial_map_zurich.png",
+    "resolution" : 0.1,
+    "scale" : 1, 
+    "global_origin" : [-45, -27.6]
+}
