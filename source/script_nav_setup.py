@@ -202,7 +202,7 @@ def create_seta(event):
 
             obj_seta = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=3+count_scale, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj_seta)
-            dict_objects[str(obj_seta)] = ['seta', seta_p1]
+            dict_objects[str(obj_seta)] = ['seta', seta_p1, cont_tag]
             # text=str(cont_tag).zfill(3)
 
             if -0.6 >= theta >=-2.5:
@@ -215,7 +215,7 @@ def create_seta(event):
             fonte = "Times "+str(10+count_scale)+" bold"
             obj_valor = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font=fonte, text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj_valor)
-            dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim]]
+            dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim], cont_tag]
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
             texto_pose = '{xx:.3f}, {yy:.3f}, {zz:.3f}'
@@ -223,13 +223,14 @@ def create_seta(event):
             txt_pose.insert('end', texto_pose.format(xx = point1[0], yy = point1[1], zz = theta) )            
             print(f'Posição da {cont_tag}ª Tag: {point1[0]}, {point1[1]}, {theta}')
             cont_tag+=1
-
-
+            #print(dict_objects)
 
         else:
+            pass
             #apagar o ponto
-            image_window.reset_canvas([objects_to_delete.pop()])
+            #image_window.reset_canvas([objects_to_delete.pop()])
         #txt_local.grab_release()
+
 
     elif (distance2_mode and str(canvas) == '.!scrollableimage.!canvas'):
         distance2_mode = False
@@ -246,7 +247,8 @@ def create_seta(event):
         txt_dist.insert('end', texto_pose.format(xx = dist_final) )            
         print(f'Distancia: {dist_final}')
         #objects_to_delete.append(obj_seta)
-        image_window.reset_canvas([objects_to_delete.pop()])
+        if dist_final>0.0 and angle_mode == False and tag_mode == False:
+            image_window.reset_canvas([objects_to_delete.pop()])
 
 
 
@@ -305,7 +307,8 @@ def mouse_move_seta(event):
         image_window.reset_canvas([objects_to_delete.pop()])
         obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='green', arrow=tkinter.BOTH)
         objects_to_delete.append(obj)
-        contador_mouse_move +=1        
+        contador_mouse_move +=1
+
 
 
 def save_as_png(canvas,fileName):
@@ -492,6 +495,22 @@ def check_angulo_marcado():
         print('Nao Rotacionar')
         rotacionar = False
 
+def undone_tag():
+    global image_window, dict_tags, objects_to_delete, dict_objects, cont_tag
+    if len(dict_tags) > 0:
+        valor=dict_tags.popitem()
+
+        #int(valor[0]) # id tag removida
+        print(valor)
+        for key, obj in dict_objects.items():
+            print(key, obj)
+            if int(valor[0]) == obj[2]:
+                image_window.reset_canvas([key])
+                
+                #objects_to_delete.remove(key)
+        cont_tag-=1
+        #image_window.reset_canvas([objects_to_delete.pop()])
+
 
 ##
 ##  ::: PRINCIPAL ::: 
@@ -555,7 +574,7 @@ txt_pose.insert('end', '0.000, 0.000, 0.000')
 labelframe_dist = tkinter.LabelFrame(root, text="Cálculo de distância", labelanchor="n", width=200, height=90)
 labelframe_dist.pack( anchor="w", padx=20, pady=10 )
 
-button_dist = tkinter.Button(labelframe_dist, text="Calcular Distância", width=8, height=2, wraplength=90, command=calc_distance_btn)
+button_dist = tkinter.Button(labelframe_dist, text=" \u2194 Distância", width=8, height=2, wraplength=90, command=calc_distance_btn)
 button_dist.place(x=8, y=10)
 
 txt_dist = tkinter.Text(labelframe_dist, height = 1, width = 7, end="0", font="Times 13 bold")
@@ -587,32 +606,37 @@ button_graph.place(x=40, y=50)
 
 ##### Rotacionar
 labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
-labelframe_rotacionar.pack( anchor="w", padx=20 )
+labelframe_rotacionar.pack( anchor="w", padx=20, pady=15 )
 
-button_rotacao = tkinter.Button(labelframe_rotacionar, text="Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
+button_rotacao = tkinter.Button(labelframe_rotacionar, text=" \u21ba Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
 button_rotacao.place(x=40, y=15)
 
 flag_rot = tkinter.IntVar()
 check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
 check_rot.place(x=10, y=90)
 
-labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200, labelanchor="n")
-labelframe_geral.pack( anchor="w", padx=20 )
 
-button_reset = tkinter.Button(labelframe_geral, text="Resetar", width=10, height=3, command=reset_win)
+###### Geral
+labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200, labelanchor="n")
+labelframe_geral.pack( anchor="w", padx=20, pady=5 )
+
+button_reset = tkinter.Button(labelframe_geral, text="\u267B Resetar", width=7, height=1, command=reset_win)
 button_reset.place(x=10, y=20)
 
-button_close = tkinter.Button(labelframe_geral, text="Sair", width=10, height=3, command=close_win)
+button_reset = tkinter.Button(labelframe_geral, text="\u21b6 Desfazer", width=7, height=1, command=undone_tag)
+button_reset.place(x=100, y=20)
+
+button_close = tkinter.Button(labelframe_geral, text="\u00D7 Sair", width=7, height=1, command=close_win)
 button_close.place(x=10, y=100)
+
+button_reset = tkinter.Button(labelframe_geral, text="Outro", width=7, height=1, command=close_win)
+button_reset.place(x=100, y=100)
 
 def eucl_dist(point1, point2):
     sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
     return np.sqrt(sum_sq)
 
 def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
-    #c = canvas
-    
-
     if dict_obj.get( str(obj_id) )[0] == 'seta':
         # print('aumentando seta')
         width = 3+val_zoom
