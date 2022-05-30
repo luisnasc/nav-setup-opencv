@@ -96,7 +96,7 @@ def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
-    print(event.state)
+    #print(event.state)
 
 
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
@@ -512,6 +512,14 @@ def undone_tag():
         #image_window.reset_canvas([objects_to_delete.pop()])
 
 
+
+
+
+
+
+
+
+
 ##
 ##  ::: PRINCIPAL ::: 
 ##
@@ -525,7 +533,6 @@ global_origin_last = global_origin
 img, global_origin = zoom(img, zoom_factor, global_origin_default)
 shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
-
 
 
 root = tkinter.Tk()
@@ -638,7 +645,6 @@ def eucl_dist(point1, point2):
 
 def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
     if dict_obj.get( str(obj_id) )[0] == 'seta':
-        # print('aumentando seta')
         width = 3+val_zoom
         x0 = c.bbox(obj_id)[0] # x-coordinate of the left side of the text
         c.itemconfigure(obj_id, width=width)
@@ -665,84 +671,38 @@ def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
 
 def mouse_scroll(event):
     global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last
-    
-    if flag_iniciou_tag == 1:
-        print('Finalizar esse processo')
 
     canvas = event.widget
     if event.num == 4 and event.state == 20:
-        count_scale+=1
-        zoom_factor = count_scale
-        global_origin_last = global_origin
-        img, global_origin = zoom(original_img, count_scale, global_origin_default)
-
-
-        shape = np.shape(img)
-        altura, largura  = shape[0], shape[1]
-
-        shape_old = np.shape(original_img)
-        altura_old, largura_old  = shape_old[0], shape_old[1]
-
-        distancia = eucl_dist(shape, shape_old)
-
-        for obj_id in objects_to_delete:
-            if str(obj_id) in list(dict_objects.keys()) and canvas.type(obj_id) in ['line', 'text']:
-
-                #print(obj_id)
-                #print(dict_objects.get(str(obj_id)))
-                position = dict_objects.get(str(obj_id))[1]
-                print('Escala', count_scale)
-                print('posicao', position)
-                position_final = np.dot(position, count_scale)
-                # distancia = eucl_dist(position, position_final)
-                dif_x, dif_y = (position_final[0]-position[0]), (position_final[1]-position[1])
-
-                resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
-
-
-                #image_window.reset_canvas([objects_to_delete.pop()])
-                #obj = canvas.create_line(seta_p1[0], seta_p1[1], seta_p2[0], seta_p2[1], width=3, fill='blue', arrow=tkinter.LAST)
-                #objects_to_delete.append(obj)
-
-
-                canvas.move(obj_id, dif_x, dif_y)
-                #canvas.itemconfigure(obj_id, width=width)
-
-
-        im = Image.fromarray(img)
-        imgtk = ImageTk.PhotoImage(image=im)
-        #print('foi aqui')
-
-        image_window.redraw_canvas(1, imgtk)
-        #canvas.create_image(0, 0, anchor='nw', image=imgtk)
-
-
-    if event.num == 5 and event.state == 20:
-        print('zoom out')
-        #canvas.delete("all")
-        count_scale-=1
-        zoom_factor = count_scale
-        if(count_scale < 1):
-            count_scale = 1
-        else:
+        if len(dict_objects) <= 0:
+            count_scale+=1
+            zoom_factor = count_scale
             global_origin_last = global_origin
             img, global_origin = zoom(original_img, count_scale, global_origin_default)
-            shape = np.shape(img)
-            altura, largura  = shape[0], shape[1]
-
-            shape_old = np.shape(original_img)
-            
-
-            for obj_id in objects_to_delete:
-                if str(obj_id) in list(dict_objects.keys()):
-                    print('foi')
-                    resize_canvas_obj(event, canvas, obj_id, dict_objects, count_scale)
 
             im = Image.fromarray(img)
             imgtk = ImageTk.PhotoImage(image=im)
-
             image_window.redraw_canvas(1, imgtk)
-            
+        else:
+            tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
+
+    if event.num == 5 and event.state == 20:
+        if len(dict_objects) <= 0:
+            count_scale-=1
+            zoom_factor = count_scale
+            if(count_scale < 1):
+                count_scale = 1
+            else:
+                global_origin_last = global_origin
+                img, global_origin = zoom(original_img, count_scale, global_origin_default)
+
+                im = Image.fromarray(img)
+                imgtk = ImageTk.PhotoImage(image=im)
+
+                image_window.redraw_canvas(1, imgtk)
+        else:
+            tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
+
 
 
 #<Double-Button-1
