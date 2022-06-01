@@ -225,11 +225,11 @@ def click_esq_event(event):
                     objects_to_delete.append(obj)  
 
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
-                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [ids_mae]]
+                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, ids_mae]
+                #e o nó mae add o filho
                 cont_vertice_grafo+=1
                     # registra as conexoes, mas armazena só um ponto.
                     # só um ponto é impresso
-                
 
             else:
                 id_mae = ids_mae[0]
@@ -243,9 +243,12 @@ def click_esq_event(event):
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
 
                 dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [id_mae]]
+                #e o nó mae add o filho
+
                 cont_vertice_grafo+=1
                 
 
+            print(dict_nodes_position)    
 
             #bolha_filha = draw_bubble(id_mae, mouseX, mouseY)
 
@@ -858,6 +861,8 @@ def mouse_scroll(event):
             zoom_factor = count_scale
             global_origin_last = global_origin
             img, global_origin = zoom(original_img, count_scale, global_origin_default)
+            shape = np.shape(img)
+            altura, largura  = shape[0], shape[1]            
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             im = Image.fromarray(img)
@@ -875,6 +880,8 @@ def mouse_scroll(event):
             else:
                 global_origin_last = global_origin
                 img, global_origin = zoom(original_img, count_scale, global_origin_default)
+                shape = np.shape(img)
+                altura, largura  = shape[0], shape[1]                
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
                 im = Image.fromarray(img)
