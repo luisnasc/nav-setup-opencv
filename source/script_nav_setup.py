@@ -225,7 +225,7 @@ def click_esq_event(event):
                     objects_to_delete.append(obj)  
 
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
-                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point]
+                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [ids_mae]]
                 cont_vertice_grafo+=1
                     # registra as conexoes, mas armazena só um ponto.
                     # só um ponto é impresso
@@ -242,7 +242,7 @@ def click_esq_event(event):
 
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
 
-                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point]
+                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [id_mae]]
                 cont_vertice_grafo+=1
                 
 
