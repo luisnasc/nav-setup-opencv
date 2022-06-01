@@ -41,6 +41,9 @@ click_p1 = 0
 count_scale = 1
 global_origin_last = []
 dict_objects = {}
+dict_nodes_position = {}
+nodes_position = []
+cont_vertice_grafo = 0
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
@@ -93,6 +96,77 @@ def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
     return point
 
 
+def find_nearest_node(ponto, raio):
+    #print('--------------')
+    menor_dist = 10000
+    id_menor = 0
+    ids=[]
+    raios = []
+    for i in range(len(dict_nodes_position)):
+        dist = eucl_dist(dict_nodes_position[i][0], ponto)
+        #print(i, ' - ', dist, '  --- ', raio)
+        if dist <= raio:
+            ids.append(i)
+            raios.append(dist)
+        if dist < menor_dist:
+            id_menor = i
+            menor_dist = dist
+            #if 1==1:
+            # else:
+            #     ids.append(id_menor)
+            #     raios.append(raio)                
+    if len(ids) > 1:
+        return ids, raios
+    else:
+        return [id_menor], [dist]
+
+
+def find_nearest_node2(ponto, raio):
+    menor_dist = 10000
+    id_menor = 0
+    ids=[]
+    raios = []
+    for i in range(len(dict_nodes_position)):
+        dist = eucl_dist(dict_nodes_position[i][0], ponto)
+        if dist <= raio:
+            id_menor = i
+            menor_dist = dist
+            #if 1==1:
+            if dist <= raio:
+                ids.append(id_menor)
+                raios.append(dist)
+            # else:
+            #     ids.append(id_menor)
+            #     raios.append(raio)                
+    if len(ids) > 1:
+        return ids, raios
+    else:
+        return [id_menor], [raio]
+
+
+def draw_bubble(id_bolha_mae, mouseX, mouseY, radius_graph, canvas):
+
+    bm = dict_nodes_position[id_bolha_mae][0]
+    rx, ry = mouseX, mouseY
+    p_x = bm[0]+ radius_graph* ((rx-bm[0])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
+    p_y = bm[1]+ radius_graph* ((ry-bm[1])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
+
+    #c = create_circle(p_x, p_y, radius_graph, canvas)
+    #objects_to_delete.append(c)
+
+    fonte = "Times "+str(15+count_scale)+" bold"
+    txt_centro = canvas.create_text(p_x, p_y,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
+    objects_to_delete.append(txt_centro)
+
+    return [p_x, p_y]
+
+    # c = create_circle(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution), radius_graph, canvas)
+    # objects_to_delete.append(c)
+
+    # dict_nodes_position[cont_vertice_grafo] = [abs(global_origin[0]/resolution), abs(global_origin[1]/resolution)]
+    # cont_vertice_grafo +=1
+
+
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
@@ -100,7 +174,7 @@ def click_esq_event(event):
 
 
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
-    global click_p1_trans, contador_mouse_move, distance2_mode, distance_mode
+    global click_p1_trans, contador_mouse_move, distance2_mode, distance_mode, cont_vertice_grafo, dict_nodes_position
     canvas = event.widget
 
     if event.state == 17:
@@ -112,19 +186,107 @@ def click_esq_event(event):
     try:
         mouseX = canvas.canvasx(event.x)
         mouseY = canvas.canvasy(event.y)
+        #print('posicao clicada', mouseX, mouseY)
     except Exception as e:
         print(e)
 
     if (str(canvas) == '.!scrollableimage.!canvas') :
 
-        if graph_mode: # draw circles
-            point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+        if distance_mode:
+            if not distance2_mode:
+                distance2_mode = True
+                point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+                seta_p1 = (mouseX, mouseY)
+                contador_mouse_move = 0  
+        
+        
+        elif graph_mode: # draw circles
             
             radius_graph = int(txt_raio.get("1.0","end-1c"))
 
-            #print(point)
-            c = create_circle(mouseX, mouseY, radius_graph, canvas)
-            objects_to_delete.append(c)
+            #tamanho_gray = np.shape(gray)
+            
+            ids_mae, raios = find_nearest_node([mouseX, mouseY], radius_graph)
+            # bolha_filha = draw_bubble(id_mae, mouseX, mouseY, raios[i], canvas)
+
+            print(ids_mae)
+
+            if len(ids_mae) > 1:
+                bolha_filha = [mouseX, mouseY]
+                for i in range(len(ids_mae)):  
+                    id_mae = ids_mae[i]
+                    bm = dict_nodes_position[id_mae][0]
+
+                    fonte = "Times "+str(15+count_scale)+" bold"
+                    txt_centro = canvas.create_text(bolha_filha[0], bolha_filha[1],fill="red",font=fonte, text=str(cont_vertice_grafo)) 
+                    objects_to_delete.append(txt_centro)
+
+                    obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=2, fill='blue')
+                    objects_to_delete.append(obj)  
+
+                point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
+                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point]
+                cont_vertice_grafo+=1
+                    # registra as conexoes, mas armazena só um ponto.
+                    # só um ponto é impresso
+                
+
+            else:
+                id_mae = ids_mae[0]
+                bm = dict_nodes_position[id_mae][0]
+
+                bolha_filha = draw_bubble(id_mae, mouseX, mouseY, radius_graph, canvas)
+
+                obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=2, fill='blue')
+                objects_to_delete.append(obj)  
+
+                point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
+
+                dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point]
+                cont_vertice_grafo+=1
+                
+
+
+            #bolha_filha = draw_bubble(id_mae, mouseX, mouseY)
+
+            # id = find_nearest(mouseY, mouseX)
+            # centro = encontra_bolha
+            # ponto_bolha = draw_buuble(centro)
+            # ponto = transforma(ponto_bolha)
+            # add ponto e ponto_bolha ao dicionario
+            # incrementa 
+            # bm=[0, abs(global_origin[0]/resolution), abs(global_origin[1]/resolution)]
+
+
+            # rx, ry = mouseX, mouseY
+            # p_x = bm[0]+ radius_graph* ((rx-bm[0])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
+            # p_y = bm[1]+ radius_graph* ((ry-bm[1])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
+
+            # c = create_circle(p_x, p_y, radius_graph, canvas)
+            # objects_to_delete.append(c)
+
+            # obter o ponto mais próximo
+
+            
+
+            '''
+            pixel_point = gray[int(mouseY), int(mouseX)]
+            if(pixel_point > 250):
+                c = create_circle(mouseX, mouseY, radius_graph, canvas)
+                objects_to_delete.append(c)
+            else:
+                print('fora da área navegável')
+            '''
+
+
+
+
+            #print(np.shape(gray))
+            #print(mouseX, mouseY)
+
+
+
+
         elif tag_mode:
             if not angle_mode:
                 angle_mode = True
@@ -140,13 +302,7 @@ def click_esq_event(event):
                 obj = canvas.create_line(seta_p1[0]+30, seta_p1[1], seta_p1[0]-30, seta_p1[1], width=3, fill='green')
                 objects_to_delete.append(obj)
                 obj = canvas.create_line(seta_p1[0], seta_p1[1]+30, seta_p1[0], seta_p1[1]-30, width=3, fill='green')
-                objects_to_delete.append(obj)  
-        elif distance_mode:
-            if not distance2_mode:
-                distance2_mode = True
-                point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
-                seta_p1 = (mouseX, mouseY)
-                contador_mouse_move = 0                    
+                objects_to_delete.append(obj)                    
         else:
             point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
             click_p1 = [mouseX, mouseY]
@@ -233,6 +389,8 @@ def create_seta(event):
 
 
     elif (distance2_mode and str(canvas) == '.!scrollableimage.!canvas'):
+        if tag_mode :
+            image_window.reset_canvas([objects_to_delete.pop()])
         distance2_mode = False
             
         point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
@@ -368,7 +526,9 @@ def ligar_tags():
 
 
 def ligar_grafos():
-    global graph_mode, cont_tag
+    global graph_mode, cont_tag, image_window, count_scale, cont_vertice_grafo
+
+    canvas = image_window.cnvs
 
     if button_graph.config('text')[-1] == 'Concluir \nGrafo':
         button_graph.config(text='Criar Grafo', background=defaultbg)
@@ -376,6 +536,19 @@ def ligar_grafos():
     else:
         button_graph.config(text='Concluir \nGrafo', background='blue')
         graph_mode = True
+
+        radius_graph = int(txt_raio.get("1.0","end-1c"))
+
+        #c = create_circle(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution), radius_graph, canvas)
+        #objects_to_delete.append(c)
+        fonte = "Times "+str(15+count_scale)+" bold"
+        txt_centro = canvas.create_text(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution),fill="red",font=fonte, text=str(cont_vertice_grafo)) 
+        objects_to_delete.append(txt_centro)
+
+        dict_nodes_position[cont_vertice_grafo] =[ [abs(global_origin[0]/resolution), abs(global_origin[1]/resolution)], [0,0]]
+        cont_vertice_grafo +=1
+        nodes_position.append([0,0])
+
 
 def calc_distance_btn():
     global distance_mode
@@ -388,11 +561,13 @@ def calc_distance_btn():
 
 
 def reset_win(event=None):
-    global image_window, im, imgtk, root, cont_tag, flag_iniciou_tag, dict_tags, dict_objects
+    global image_window, im, imgtk, root, cont_tag, flag_iniciou_tag, dict_tags, dict_objects, cont_vertice_grafo, dict_nodes_position
     image_window.reset_canvas(objects_to_delete)
     flag_iniciou_tag=0
     dict_tags = {}
     dict_objects = {}
+    cont_vertice_grafo=0
+    dict_nodes_position={}
     cont_tag = int(txt_num_tag.get("1.0","end-1c"))
     txt_num_tag.config(state="normal")
     button_graph.config(state="normal")
@@ -531,6 +706,7 @@ original_img = img
 global_origin_default = global_origin
 global_origin_last = global_origin
 img, global_origin = zoom(img, zoom_factor, global_origin_default)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
 
@@ -604,7 +780,7 @@ lbl_raio.place(x=10, y=10)
 
 txt_raio = tkinter.Text(labelframe_grafo, height = 1, width = 5, end="0")
 txt_raio.place(x=120, y=10)
-txt_raio.insert('end', '5')
+txt_raio.insert('end', '70')
 
 
 button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
@@ -640,8 +816,11 @@ button_reset = tkinter.Button(labelframe_geral, text="Outro", width=7, height=1,
 button_reset.place(x=100, y=100)
 
 def eucl_dist(point1, point2):
-    sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
-    return np.sqrt(sum_sq)
+    #sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
+    #return np.sqrt(sum_sq)
+    dist = np.linalg.norm(np.array(point2)-np.array(point1)) 
+    return dist 
+
 
 def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
     if dict_obj.get( str(obj_id) )[0] == 'seta':
@@ -670,7 +849,7 @@ def resize_canvas_obj(event, c, obj_id, dict_obj, val_zoom):
             y1 = c.bbox(obj_id)[3]
 
 def mouse_scroll(event):
-    global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last
+    global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last, gray
 
     canvas = event.widget
     if event.num == 4 and event.state == 20:
@@ -679,6 +858,7 @@ def mouse_scroll(event):
             zoom_factor = count_scale
             global_origin_last = global_origin
             img, global_origin = zoom(original_img, count_scale, global_origin_default)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             im = Image.fromarray(img)
             imgtk = ImageTk.PhotoImage(image=im)
@@ -695,6 +875,7 @@ def mouse_scroll(event):
             else:
                 global_origin_last = global_origin
                 img, global_origin = zoom(original_img, count_scale, global_origin_default)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
                 im = Image.fromarray(img)
                 imgtk = ImageTk.PhotoImage(image=im)
