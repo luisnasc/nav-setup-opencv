@@ -49,7 +49,7 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('../config_aeroporto_vix.json')
+    f = open('../config.json')
     data = json.load(f)
     map_file = '../'+data['map_file']
     resolution = data['resolution']
@@ -170,7 +170,7 @@ def draw_bubble(id_bolha_mae, mouseX, mouseY, radius_graph, canvas):
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
-    #print(event.state)
+    print(event.state)
 
 
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
@@ -182,6 +182,8 @@ def click_esq_event(event):
     elif event.state != 17 and button_dist.config('text')[-1] != 'Concluir':
         distance_mode = False
     
+
+
     mouseX, mouseY = 0,0
     try:
         mouseX = canvas.canvasx(event.x)
@@ -189,6 +191,15 @@ def click_esq_event(event):
         #print('posicao clicada', mouseX, mouseY)
     except Exception as e:
         print(e)
+
+
+    if event.state == 24:
+        print(mouseX, mouseY)
+        print(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution) )
+
+
+
+      
 
     if (str(canvas) == '.!scrollableimage.!canvas') :
 
@@ -206,6 +217,17 @@ def click_esq_event(event):
 
             #tamanho_gray = np.shape(gray)
             
+            if cont_vertice_grafo==0:
+                fonte = "Times "+str(15+count_scale)+" bold"
+                txt_centro = canvas.create_text(mouseX, mouseY,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
+                objects_to_delete.append(txt_centro)
+                point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+                dict_nodes_position[cont_vertice_grafo] =[ [mouseX, mouseY] , point, [] ]
+                cont_vertice_grafo +=1
+                return
+
+
+
             ids_mae, raios = find_nearest_node([mouseX, mouseY], radius_graph)
             # bolha_filha = draw_bubble(id_mae, mouseX, mouseY, raios[i], canvas)
 
@@ -214,7 +236,7 @@ def click_esq_event(event):
             if len(ids_mae) > 1:
                 bolha_filha = [mouseX, mouseY]
                 for i in range(len(ids_mae)):  
-                    id_mae = ids_mae[i]
+                    id_mae = ids_mae[i] # um filho para muitas mães rsrsrs
                     bm = dict_nodes_position[id_mae][0]
 
                     fonte = "Times "+str(15+count_scale)+" bold"
@@ -223,6 +245,8 @@ def click_esq_event(event):
 
                     obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=2, fill='blue')
                     objects_to_delete.append(obj)  
+
+                    dict_nodes_position[id_mae][2].append(cont_vertice_grafo)
 
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
                 dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, ids_mae]
@@ -243,7 +267,8 @@ def click_esq_event(event):
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
 
                 dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [id_mae]]
-                #e o nó mae add o filho
+                # E o nó mae add o filho
+                dict_nodes_position[id_mae][2].append(cont_vertice_grafo) #= [bolha_filha, point, [id_mae]]
 
                 cont_vertice_grafo+=1
                 
@@ -535,23 +560,27 @@ def ligar_grafos():
 
     if button_graph.config('text')[-1] == 'Concluir \nGrafo':
         button_graph.config(text='Criar Grafo', background=defaultbg)
+        button_grafo_salvar.config(state="normal")
         graph_mode = False
     else:
         button_graph.config(text='Concluir \nGrafo', background='blue')
         graph_mode = True
 
+        button_grafo_salvar.config(state="disabled")
         radius_graph = int(txt_raio.get("1.0","end-1c"))
 
         #c = create_circle(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution), radius_graph, canvas)
         #objects_to_delete.append(c)
+        
+        '''
         fonte = "Times "+str(15+count_scale)+" bold"
         txt_centro = canvas.create_text(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution),fill="red",font=fonte, text=str(cont_vertice_grafo)) 
         objects_to_delete.append(txt_centro)
 
-        dict_nodes_position[cont_vertice_grafo] =[ [abs(global_origin[0]/resolution), abs(global_origin[1]/resolution)], [0,0]]
+        dict_nodes_position[cont_vertice_grafo] =[ [abs(global_origin[0]/resolution), abs(global_origin[1]-40/resolution)], [0,0]]
         cont_vertice_grafo +=1
         nodes_position.append([0,0])
-
+        '''
 
 def calc_distance_btn():
     global distance_mode
@@ -594,6 +623,27 @@ def salvar_tags():
         
     else :
         pass
+
+def salvar_grafos():
+    dict_nodes  = {}
+    for i in range(len(dict_nodes_position)):
+        dict_nodes[i] = dict_nodes_position[i][2]
+    import pprint
+    print(dict_nodes)
+    g=dict_nodes
+    keys=sorted(g.keys())
+    size=len(keys)
+
+    M = [ [0]*size for i in range(size) ]
+
+    for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
+        M[a][b] = 2 if (a==b) else 1
+
+    print('\n\n\n')
+    for i in range(len(dict_nodes)):
+        for j in range(len(dict_nodes)):
+            print(M[i][j], ' ')
+        print('')
 
 
 def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
@@ -709,7 +759,7 @@ original_img = img
 global_origin_default = global_origin
 global_origin_last = global_origin
 img, global_origin = zoom(img, zoom_factor, global_origin_default)
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 shape = np.shape(img)
 altura, largura  = shape[0], shape[1]
 
@@ -786,9 +836,12 @@ txt_raio.place(x=120, y=10)
 txt_raio.insert('end', '70')
 
 
-button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=3, command=ligar_grafos,  wraplength=90)
+button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=2, command=ligar_grafos,  wraplength=90)
 button_graph.place(x=40, y=50)
 
+
+button_grafo_salvar = tkinter.Button(labelframe_grafo, text="Salvar Grafo", width=10, height=2, background='lightgreen', command=salvar_grafos, state="disabled", wraplength=90)
+button_grafo_salvar.place(x=40, y=110)
 
 ##### Rotacionar
 labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
@@ -863,7 +916,7 @@ def mouse_scroll(event):
             img, global_origin = zoom(original_img, count_scale, global_origin_default)
             shape = np.shape(img)
             altura, largura  = shape[0], shape[1]            
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             im = Image.fromarray(img)
             imgtk = ImageTk.PhotoImage(image=im)
@@ -882,7 +935,7 @@ def mouse_scroll(event):
                 img, global_origin = zoom(original_img, count_scale, global_origin_default)
                 shape = np.shape(img)
                 altura, largura  = shape[0], shape[1]                
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
                 im = Image.fromarray(img)
                 imgtk = ImageTk.PhotoImage(image=im)
