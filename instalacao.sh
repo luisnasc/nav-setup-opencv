@@ -16,7 +16,7 @@ mkdir -p venv-setup-nav
 cd venv-setup-nav
 #wget https://bootstrap.pypa.io/get-pip.py
 #python3 get-pip.py
-
+apt-get install python3-pip
 pip install virtualenv
 
 rm get-pip.py

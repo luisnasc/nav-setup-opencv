@@ -42,6 +42,8 @@ count_scale = 1
 global_origin_last = []
 dict_objects = {}
 dict_nodes_position = {}
+dict_bubbles = {}
+dict_aresta = {}
 nodes_position = []
 cont_vertice_grafo = 0
 
@@ -49,7 +51,7 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('../config.json')
+    f = open('../config_shopping_paulista.json')
     data = json.load(f)
     map_file = '../'+data['map_file']
     resolution = data['resolution']
@@ -76,7 +78,7 @@ def create_circle(x, y, r, canvasName): #center coordinates, radius
     y0 = y - r
     x1 = x + r
     y1 = y + r
-    return canvasName.create_oval(x0, y0, x1, y1)
+    return canvasName.create_oval(x0, y0, x1, y1, outline='green')
 
 
 def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
@@ -121,44 +123,24 @@ def find_nearest_node(ponto, raio):
         return [id_menor], [dist]
 
 
-def find_nearest_node2(ponto, raio):
-    menor_dist = 10000
-    id_menor = 0
-    ids=[]
-    raios = []
-    for i in range(len(dict_nodes_position)):
-        dist = eucl_dist(dict_nodes_position[i][0], ponto)
-        if dist <= raio:
-            id_menor = i
-            menor_dist = dist
-            #if 1==1:
-            if dist <= raio:
-                ids.append(id_menor)
-                raios.append(dist)
-            # else:
-            #     ids.append(id_menor)
-            #     raios.append(raio)                
-    if len(ids) > 1:
-        return ids, raios
-    else:
-        return [id_menor], [raio]
-
-
 def draw_bubble(id_bolha_mae, mouseX, mouseY, radius_graph, canvas):
+
+    #global dict_bubbles
 
     bm = dict_nodes_position[id_bolha_mae][0]
     rx, ry = mouseX, mouseY
     p_x = bm[0]+ radius_graph* ((rx-bm[0])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
     p_y = bm[1]+ radius_graph* ((ry-bm[1])/ np.sqrt( (rx-bm[0])**2 + (ry-bm[1])**2 ));
 
-    #c = create_circle(p_x, p_y, radius_graph, canvas)
-    #objects_to_delete.append(c)
+    c = create_circle(p_x, p_y, radius_graph, canvas)
+    objects_to_delete.append(c)
 
+    
     fonte = "Times "+str(15+count_scale)+" bold"
     txt_centro = canvas.create_text(p_x, p_y,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
     objects_to_delete.append(txt_centro)
 
-    return [p_x, p_y]
+    return [p_x, p_y], txt_centro, c
 
     # c = create_circle(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution), radius_graph, canvas)
     # objects_to_delete.append(c)
@@ -175,6 +157,7 @@ def click_esq_event(event):
 
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
     global click_p1_trans, contador_mouse_move, distance2_mode, distance_mode, cont_vertice_grafo, dict_nodes_position
+    global dict_aresta
     canvas = event.widget
 
     if event.state == 17:
@@ -208,7 +191,7 @@ def click_esq_event(event):
                 distance2_mode = True
                 point1 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
                 seta_p1 = (mouseX, mouseY)
-                contador_mouse_move = 0  
+                contador_mouse_move = 0
         
         
         elif graph_mode: # draw circles
@@ -221,6 +204,9 @@ def click_esq_event(event):
                 fonte = "Times "+str(15+count_scale)+" bold"
                 txt_centro = canvas.create_text(mouseX, mouseY,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
                 objects_to_delete.append(txt_centro)
+                c = create_circle(mouseX, mouseY, radius_graph, canvas)
+                objects_to_delete.append(c)
+                dict_aresta[cont_vertice_grafo] = [txt_centro, c]
                 point = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
                 dict_nodes_position[cont_vertice_grafo] =[ [mouseX, mouseY] , point, [] ]
                 cont_vertice_grafo +=1
@@ -231,10 +217,13 @@ def click_esq_event(event):
             ids_mae, raios = find_nearest_node([mouseX, mouseY], radius_graph)
             # bolha_filha = draw_bubble(id_mae, mouseX, mouseY, raios[i], canvas)
 
-            print(ids_mae)
+            #print(ids_mae)
 
             if len(ids_mae) > 1:
                 bolha_filha = [mouseX, mouseY]
+                c = create_circle(bolha_filha[0], bolha_filha[1], radius_graph, canvas)
+                objects_to_delete.append(c)                    
+                objs_grafo = []
                 for i in range(len(ids_mae)):  
                     id_mae = ids_mae[i] # um filho para muitas mães rsrsrs
                     bm = dict_nodes_position[id_mae][0]
@@ -242,12 +231,13 @@ def click_esq_event(event):
                     fonte = "Times "+str(15+count_scale)+" bold"
                     txt_centro = canvas.create_text(bolha_filha[0], bolha_filha[1],fill="red",font=fonte, text=str(cont_vertice_grafo)) 
                     objects_to_delete.append(txt_centro)
-
-                    obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=2, fill='blue')
+                    objs_grafo.append(txt_centro)
+                    obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=3, fill='blue')
                     objects_to_delete.append(obj)  
-
+                    objs_grafo.append(obj)
                     dict_nodes_position[id_mae][2].append(cont_vertice_grafo)
-
+                
+                dict_aresta[cont_vertice_grafo] = objs_grafo
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
                 dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, ids_mae]
                 #e o nó mae add o filho
@@ -259,11 +249,16 @@ def click_esq_event(event):
                 id_mae = ids_mae[0]
                 bm = dict_nodes_position[id_mae][0]
 
-                bolha_filha = draw_bubble(id_mae, mouseX, mouseY, radius_graph, canvas)
+                distancia = eucl_dist([mouseX, mouseY], bm)
+
+                if distancia > radius_graph:
+                    bolha_filha, txt, c = draw_bubble(id_mae, mouseX, mouseY, radius_graph, canvas)
+                else:
+                    bolha_filha, txt, c = draw_bubble(id_mae, mouseX, mouseY, distancia, canvas)
 
                 obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=2, fill='blue')
                 objects_to_delete.append(obj)  
-
+                dict_aresta[cont_vertice_grafo] = [obj, txt, c]
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
 
                 dict_nodes_position[cont_vertice_grafo] = [bolha_filha, point, [id_mae]]
@@ -273,7 +268,7 @@ def click_esq_event(event):
                 cont_vertice_grafo+=1
                 
 
-            print(dict_nodes_position)    
+            #print(dict_nodes_position)    
 
             #bolha_filha = draw_bubble(id_mae, mouseX, mouseY)
 
@@ -625,6 +620,7 @@ def salvar_tags():
         pass
 
 def salvar_grafos():
+    global image_window
     dict_nodes  = {}
     for i in range(len(dict_nodes_position)):
         dict_nodes[i] = dict_nodes_position[i][2]
@@ -639,12 +635,32 @@ def salvar_grafos():
     for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
         M[a][b] = 2 if (a==b) else 1
 
+    mat = M
+    positions=[]
+    for i in range(size):
+        positions.append(dict_nodes_position[i][1])
+
+    #print(positions)
+
+    a,b = np.shape(mat)
+    for i in range(a):
+        for j in range(b):
+            if(mat[i][j] == 1):
+                #print(positions[i])
+                mat[i][j] = np.linalg.norm(positions[i] - positions[j])
+
+    np.savetxt('nodes_matrix.txt', mat, fmt="%.3f")
+    np.savetxt('nodes_position.txt', positions, fmt="%.3f")
+
     print('\n\n\n')
     for i in range(len(dict_nodes)):
         for j in range(len(dict_nodes)):
-            print(M[i][j], ' ')
+            print(M[i][j], end=' ')
         print('')
 
+    canvas_ref = image_window.cnvs
+    save_as_png(canvas_ref,'tags_posicionadas')
+    tkinter.messagebox.showinfo("Confirmação", "Arquivos gerados com sucesso")
 
 def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
     global botao_rotacionar, angulo_rotacionar
@@ -724,20 +740,29 @@ def check_angulo_marcado():
         rotacionar = False
 
 def undone_tag():
-    global image_window, dict_tags, objects_to_delete, dict_objects, cont_tag
-    if len(dict_tags) > 0:
-        valor=dict_tags.popitem()
+    global image_window, dict_tags, objects_to_delete, dict_objects, cont_tag, dict_aresta, cont_vertice_grafo
+    if graph_mode:
+        if len(dict_aresta) > 0:
+            valor=dict_aresta.popitem()
+            #for i in range(len(valor[1])):
+            #    if valor[i] in dict_objects.keys():
+            image_window.reset_canvas(valor[1])
+            dict_nodes_position.popitem()
+            cont_vertice_grafo-=1
+    else:
+        if len(dict_tags) > 0:
+            valor=dict_tags.popitem()
 
-        #int(valor[0]) # id tag removida
-        print(valor)
-        for key, obj in dict_objects.items():
-            print(key, obj)
-            if int(valor[0]) == obj[2]:
-                image_window.reset_canvas([key])
-                
-                #objects_to_delete.remove(key)
-        cont_tag-=1
-        #image_window.reset_canvas([objects_to_delete.pop()])
+            #int(valor[0]) # id tag removida
+            print(valor)
+            for key, obj in dict_objects.items():
+                print(key, obj)
+                if int(valor[0]) == obj[2]:
+                    image_window.reset_canvas([key])
+                    
+                    #objects_to_delete.remove(key)
+            cont_tag-=1
+            #image_window.reset_canvas([objects_to_delete.pop()])
 
 
 
