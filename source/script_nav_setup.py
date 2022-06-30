@@ -51,7 +51,7 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('../config_shopping_paulista.json')
+    f = open('../config_vix.json')
     data = json.load(f)
     map_file = '../'+data['map_file']
     resolution = data['resolution']
@@ -197,7 +197,7 @@ def click_esq_event(event):
         elif graph_mode: # draw circles
             
             radius_graph = int(txt_raio.get("1.0","end-1c"))
-
+            radius_graph = (radius_graph / resolution)*zoom_factor
             #tamanho_gray = np.shape(gray)
             
             if cont_vertice_grafo==0:
@@ -858,8 +858,9 @@ lbl_raio.place(x=10, y=10)
 
 txt_raio = tkinter.Text(labelframe_grafo, height = 1, width = 5, end="0")
 txt_raio.place(x=120, y=10)
-txt_raio.insert('end', '70')
-
+txt_raio.insert('end', '10')
+lbl_raio = tkinter.Label(labelframe_grafo, text="m")
+lbl_raio.place(x=165, y=10)
 
 button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=2, command=ligar_grafos,  wraplength=90)
 button_graph.place(x=40, y=50)
