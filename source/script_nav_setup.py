@@ -12,6 +12,7 @@ import tkinter
 #from tkinter import *
 import tkinter.simpledialog
 from ScrollableImage import *
+import yaml
 
 global mouseX, mouseY
 
@@ -51,12 +52,20 @@ colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yell
 
 def init_setup():
     global zoom_factor, radius, map_file, global_origin, resolution, botao_rotacionar
-    f = open('../config_vix.json')
-    data = json.load(f)
-    map_file = '../'+data['map_file']
+    # f = open('../config_escritorio.json')
+    # data = json.load(f)
+    # map_file = '../'+data['map_file']
+    # resolution = data['resolution']
+    # global_origin = data['global_origin']
+    # zoom_factor = data['scale']
+
+    f = open('../config_escritorio.yaml')
+    data = yaml.load(f, Loader=yaml.FullLoader)
+
+    map_file = '../'+data['image']
     resolution = data['resolution']
-    global_origin = data['global_origin']
-    zoom_factor = data['scale']
+    global_origin = data['origin']
+    zoom_factor = 1
 
 init_setup()
 
@@ -78,7 +87,7 @@ def create_circle(x, y, r, canvasName): #center coordinates, radius
     y0 = y - r
     x1 = x + r
     y1 = y + r
-    return canvasName.create_oval(x0, y0, x1, y1, outline='green')
+    return canvasName.create_oval(x0, y0, x1, y1, outline='light green')
 
 
 def transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y):
@@ -136,7 +145,7 @@ def draw_bubble(id_bolha_mae, mouseX, mouseY, radius_graph, canvas):
     objects_to_delete.append(c)
 
     
-    fonte = "Times "+str(15+count_scale)+" bold"
+    fonte = "Times "+str(25+count_scale)+" bold"
     txt_centro = canvas.create_text(p_x, p_y,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
     objects_to_delete.append(txt_centro)
 
@@ -201,7 +210,7 @@ def click_esq_event(event):
             #tamanho_gray = np.shape(gray)
             
             if cont_vertice_grafo==0:
-                fonte = "Times "+str(15+count_scale)+" bold"
+                fonte = "Times "+str(25+count_scale)+" bold"
                 txt_centro = canvas.create_text(mouseX, mouseY,fill="red",font=fonte, text=str(cont_vertice_grafo)) 
                 objects_to_delete.append(txt_centro)
                 c = create_circle(mouseX, mouseY, radius_graph, canvas)
@@ -228,14 +237,16 @@ def click_esq_event(event):
                     id_mae = ids_mae[i] # um filho para muitas mães rsrsrs
                     bm = dict_nodes_position[id_mae][0]
 
-                    fonte = "Times "+str(15+count_scale)+" bold"
-                    txt_centro = canvas.create_text(bolha_filha[0], bolha_filha[1],fill="red",font=fonte, text=str(cont_vertice_grafo)) 
-                    objects_to_delete.append(txt_centro)
-                    objs_grafo.append(txt_centro)
+                    fonte = "Times "+str(25+count_scale)+" bold"
                     obj = canvas.create_line(bm[0], bm[1], bolha_filha[0], bolha_filha[1], width=3, fill='blue')
                     objects_to_delete.append(obj)  
                     objs_grafo.append(obj)
                     dict_nodes_position[id_mae][2].append(cont_vertice_grafo)
+
+                    txt_centro = canvas.create_text(bolha_filha[0], bolha_filha[1],fill="red",font=fonte, text=str(cont_vertice_grafo)) 
+                    objects_to_delete.append(txt_centro)
+                    objs_grafo.append(txt_centro)
+
                 
                 dict_aresta[cont_vertice_grafo] = objs_grafo
                 point = transforma_ponto(bolha_filha[0], bolha_filha[1], zoom_factor, resolution, max_y)
@@ -379,7 +390,7 @@ def create_seta(event):
             x_fim1 =  15*np.cos(-theta+np.pi)
             y_fim1 = 15*np.sin(-theta+np.pi)
 
-            obj_seta = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=3+count_scale, fill='blue', arrow=tkinter.LAST)
+            obj_seta = canvas.create_line(seta_p1[0]+x_fim1, seta_p1[1]+y_fim1, seta_p1[0], seta_p1[1], width=2*count_scale, fill='blue', arrow=tkinter.LAST)
             objects_to_delete.append(obj_seta)
             dict_objects[str(obj_seta)] = ['seta', seta_p1, cont_tag]
             # text=str(cont_tag).zfill(3)
@@ -391,7 +402,7 @@ def create_seta(event):
             else:
                 x_fim = 34* np.cos(-theta+np.pi)
                 y_fim = 34* np.sin(-theta+np.pi)
-            fonte = "Times "+str(10+count_scale)+" bold"
+            fonte = "Times "+str(8*count_scale)+" bold"
             obj_valor = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font=fonte, text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj_valor)
             dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim], cont_tag]
