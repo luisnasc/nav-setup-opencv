@@ -402,7 +402,7 @@ def create_seta(event):
             else:
                 x_fim = 34* np.cos(-theta+np.pi)
                 y_fim = 34* np.sin(-theta+np.pi)
-            fonte = "Times "+str(8*count_scale)+" bold"
+            fonte = "Times "+str(5*count_scale)+" bold"
             obj_valor = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font=fonte, text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj_valor)
             dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim], cont_tag]
