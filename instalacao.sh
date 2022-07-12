@@ -31,7 +31,7 @@ python3 -m pip install --upgrade Pillow
 
 
 
-pip3 install virtualenvwrapper tk opencv-python numpy matplotlib
+pip3 install virtualenvwrapper tk opencv-python numpy matplotlib pyyaml
 
 
 cat <<EOF >~/.local/share/applications/setup-nav.desktop
