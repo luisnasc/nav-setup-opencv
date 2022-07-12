@@ -674,36 +674,36 @@ def salvar_grafos():
     tkinter.messagebox.showinfo("Confirmação", "Arquivos gerados com sucesso")
 
 def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
-    global botao_rotacionar, angulo_rotacionar
-    try:
-        canvas = event.widget
-        mouseX = canvas.canvasx(event.x)
-        mouseY = canvas.canvasy(event.y)
-        shape = np.shape(img)
-        max_y, max_x  = shape[0], shape[1]
-        p2 = [mouseX, mouseY]
+    # global botao_rotacionar, angulo_rotacionar
+    # try:
+    #     canvas = event.widget
+    #     mouseX = canvas.canvasx(event.x)
+    #     mouseY = canvas.canvasy(event.y)
+    #     shape = np.shape(img)
+    #     max_y, max_x  = shape[0], shape[1]
+    #     p2 = [mouseX, mouseY]
 
-        point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
+    #     point2 = transforma_ponto(mouseX, mouseY, zoom_factor, resolution, max_y)
 
 
-        obj = canvas.create_line(p1[0], p1[1], p2[0], p2[1], width=2, fill='red')
-        objects_to_delete.append(obj)    
+    #     obj = canvas.create_line(p1[0], p1[1], p2[0], p2[1], width=2, fill='red')
+    #     objects_to_delete.append(obj)    
 
-        obj = canvas.create_line(p1[0], p1[1], p2[0], p1[1], width=2, fill='green')
-        objects_to_delete.append(obj)
+    #     obj = canvas.create_line(p1[0], p1[1], p2[0], p1[1], width=2, fill='green')
+    #     objects_to_delete.append(obj)
 
-        #calcular angulo
-        theta = math.atan2(point2[1]-p1_trans[1], point2[0]-p1_trans[0])
-        angulo_rotacionar = theta
+    #     #calcular angulo
+    #     theta = math.atan2(point2[1]-p1_trans[1], point2[0]-p1_trans[0])
+    #     angulo_rotacionar = theta
 
-        #Após calcular a rotação reseta o click
-        botao_rotacionar = False
-        texto_check = 'Rotacionar {angulo:.3f} °'
-        check_rot.config(text=texto_check.format(angulo = np.rad2deg(theta)))
+    #     #Após calcular a rotação reseta o click
+    #     botao_rotacionar = False
+    #     texto_check = 'Rotacionar {angulo:.3f} °'
+    #     check_rot.config(text=texto_check.format(angulo = np.rad2deg(theta)))
 
-    except Exception as e:
-        print(e)
-
+    # except Exception as e:
+    #     print(e)
+    pass
 
 def rotate_position(point):
         theta = -angulo_rotacionar
@@ -740,15 +740,15 @@ def calc_rotacao():
     botao_rotacionar = True
 
 
-def check_angulo_marcado():
-    global rotacionar
-    if (flag_rot.get() == 1):
-        print('Rotacionar')
-        #rotacionar todo click
-        rotacionar = True
-    else:
-        print('Nao Rotacionar')
-        rotacionar = False
+# def check_angulo_marcado():
+#     global rotacionar
+#     if (flag_rot.get() == 1):
+#         print('Rotacionar')
+#         #rotacionar todo click
+#         rotacionar = True
+#     else:
+#         print('Nao Rotacionar')
+#         rotacionar = False
 
 def undone_tag():
     global image_window, dict_tags, objects_to_delete, dict_objects, cont_tag, dict_aresta, cont_vertice_grafo
@@ -808,12 +808,22 @@ defaultbg = root.cget('bg')
 im = Image.fromarray(img)
 imgtk = ImageTk.PhotoImage(image=im)
 
-image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=1200)
-image_window.pack(side="right")
+#panel esquerda
+#left_panel = tkinter.Frame(root, bg='blue', width=230, height=800)
+left_panel = tkinter.Frame(root, width=230, height=800)
+left_panel.pack(side="left",  anchor="nw", padx=10,  pady=10, fill='y')
 
+
+
+#image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1600, height=1200)
+image_window = ScrollableImage(root, image=imgtk, scrollbarwidth=6, width=1000, height=800)
+image_window.pack(side="left", anchor="nw", padx=10,  pady=10, fill="both", expand=True )
+#image_window.grid(row=0, column=0, sticky="ns")
 #draw_point(global_origin, image_window.cnvs)
 
-labelframe = tkinter.LabelFrame(root, text="Posicionamento das TAGs", width=200, height=200, labelanchor="n")
+
+
+labelframe = tkinter.LabelFrame(left_panel, text="Posicionamento das TAGs", width=200, height=140, labelanchor="n")
 labelframe.pack( anchor="nw", padx=20,  pady=10 )
  
 
@@ -824,15 +834,15 @@ txt_num_tag = tkinter.Text(labelframe, height = 1, width = 5, end="0")
 txt_num_tag.place(x=120, y=10)
 txt_num_tag.insert('end', '0')
 
-button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=10, height=2, command=ligar_tags, wraplength=90)
-button_tag.place(x=40, y=50)
+button_tag = tkinter.Button(labelframe, text="Posicionar TAGs", width=8, height=2, command=ligar_tags, wraplength=90)
+button_tag.place(x=9, y=50)
 
-button_tag_salvar = tkinter.Button(labelframe, text="Salvar TAGs", width=10, height=2, background='lightgreen', command=salvar_tags, state="disabled", wraplength=90)
-button_tag_salvar.place(x=40, y=110)
+button_tag_salvar = tkinter.Button(labelframe, text="Salvar\nTAGs", width=7, height=2, background='lightgreen', command=salvar_tags, state="disabled", wraplength=90)
+button_tag_salvar.place(x=105, y=50)
 
 ###### Pose robo
 
-labelframe_pose = tkinter.LabelFrame(root, text="Pose do robô", labelanchor="n", width=200, height=85)
+labelframe_pose = tkinter.LabelFrame(left_panel, text="Pose do robô", labelanchor="n", width=200, height=85)
 labelframe_pose.pack( anchor="w", padx=20 )
 
 
@@ -843,7 +853,7 @@ txt_pose.insert('end', '0.000, 0.000, 0.000')
 
 ###### Calcular Distância
 
-labelframe_dist = tkinter.LabelFrame(root, text="Cálculo de distância", labelanchor="n", width=200, height=90)
+labelframe_dist = tkinter.LabelFrame(left_panel, text="Cálculo de distância", labelanchor="n", width=200, height=90)
 labelframe_dist.pack( anchor="w", padx=20, pady=10 )
 
 button_dist = tkinter.Button(labelframe_dist, text=" \u2194 Distância", width=8, height=2, wraplength=90, command=calc_distance_btn)
@@ -860,7 +870,7 @@ lbl_dist.place(x=175, y=20)
 
 #####   Grafo
 
-labelframe_grafo = tkinter.LabelFrame(root, text="Configurar Grafo", width=200, height=200, labelanchor="n")
+labelframe_grafo = tkinter.LabelFrame(left_panel, text="Configurar Grafo", width=200, height=140, labelanchor="n")
 labelframe_grafo.pack( anchor="w", padx=20 )
 
 
@@ -873,40 +883,40 @@ txt_raio.insert('end', '10')
 lbl_raio = tkinter.Label(labelframe_grafo, text="m")
 lbl_raio.place(x=165, y=10)
 
-button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=10, height=2, command=ligar_grafos,  wraplength=90)
-button_graph.place(x=40, y=50)
+button_graph = tkinter.Button(labelframe_grafo, text="Configurar \nGrafo", width=8, height=2, command=ligar_grafos,  wraplength=90)
+button_graph.place(x=9, y=50)
 
 
-button_grafo_salvar = tkinter.Button(labelframe_grafo, text="Salvar Grafo", width=10, height=2, background='lightgreen', command=salvar_grafos, state="disabled", wraplength=90)
-button_grafo_salvar.place(x=40, y=110)
+button_grafo_salvar = tkinter.Button(labelframe_grafo, text="Salvar\nGrafo", width=7, height=2, background='lightgreen', command=salvar_grafos, state="disabled", wraplength=90)
+button_grafo_salvar.place(x=105, y=50)
 
 ##### Rotacionar
-labelframe_rotacionar = tkinter.LabelFrame(root, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
-labelframe_rotacionar.pack( anchor="w", padx=20, pady=15 )
+#labelframe_rotacionar = tkinter.LabelFrame(left_panel, text="Rotacionar Mapa", width=200, height=150, labelanchor="n")
+#labelframe_rotacionar.pack( anchor="w", padx=20, pady=15 )
 
-button_rotacao = tkinter.Button(labelframe_rotacionar, text=" \u21ba Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
-button_rotacao.place(x=40, y=15)
+#button_rotacao = tkinter.Button(labelframe_rotacionar, text=" \u21ba Calcular Rotação", width=10, height=3, wraplength=90, command=calc_rotacao)
+#button_rotacao.place(x=40, y=15)
 
-flag_rot = tkinter.IntVar()
-check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
-check_rot.place(x=10, y=90)
+#flag_rot = tkinter.IntVar()
+#check_rot = tkinter.Checkbutton(labelframe_rotacionar, text='Rotacionar',variable=flag_rot, onvalue=1, offvalue=0, command=check_angulo_marcado)
+#check_rot.place(x=10, y=90)
 
 
 ###### Geral
-labelframe_geral = tkinter.LabelFrame(root, text="Geral", width=200, height=200, labelanchor="n")
+labelframe_geral = tkinter.LabelFrame(left_panel, text="Geral", width=200, height=135, labelanchor="n")
 labelframe_geral.pack( anchor="w", padx=20, pady=5 )
 
 button_reset = tkinter.Button(labelframe_geral, text="\u267B Resetar", width=7, height=1, command=reset_win)
-button_reset.place(x=10, y=20)
+button_reset.place(x=10, y=10)
 
 button_reset = tkinter.Button(labelframe_geral, text="\u21b6 Desfazer", width=7, height=1, command=undone_tag)
-button_reset.place(x=100, y=20)
+button_reset.place(x=105, y=10)
 
 button_close = tkinter.Button(labelframe_geral, text="\u00D7 Sair", width=7, height=1, command=close_win)
-button_close.place(x=10, y=100)
+button_close.place(x=10, y=50)
 
 button_reset = tkinter.Button(labelframe_geral, text="Outro", width=7, height=1, command=close_win)
-button_reset.place(x=100, y=100)
+button_reset.place(x=105, y=50)
 
 def eucl_dist(point1, point2):
     #sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
