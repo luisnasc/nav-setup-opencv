@@ -47,6 +47,9 @@ dict_bubbles = {}
 dict_aresta = {}
 nodes_position = []
 cont_vertice_grafo = 0
+id_tags_list = []
+change_obj_position = False
+canvas_obj_clicked = -1
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
 
@@ -158,15 +161,16 @@ def draw_bubble(id_bolha_mae, mouseX, mouseY, radius_graph, canvas):
     # cont_vertice_grafo +=1
 
 
+#self.canvas.tag_bind(oval_element, '<Button-1>', self.object_click_event)
+
 def click_esq_event(event):
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
     print(event.state)
 
-
     global seta_p1, angle_mode, tag_mode, point1, objects_to_delete, canvas, click_p1
     global click_p1_trans, contador_mouse_move, distance2_mode, distance_mode, cont_vertice_grafo, dict_nodes_position
-    global dict_aresta
+    global dict_aresta, change_obj_position, canvas_obj_clicked
     canvas = event.widget
 
     if event.state == 17:
@@ -174,6 +178,9 @@ def click_esq_event(event):
     elif event.state != 17 and button_dist.config('text')[-1] != 'Concluir':
         distance_mode = False
     
+
+    #mx = canvas.canvasx(event.x) #Translate mouse x screen coordinate to canvas coordinate
+    #my = canvas.canvasy(event.y) #Translate mouse y screen coordinate to canvas coordinate
 
 
     mouseX, mouseY = 0,0
@@ -185,15 +192,21 @@ def click_esq_event(event):
         print(e)
 
 
-    if event.state == 24:
-        print(mouseX, mouseY)
-        print(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution) )
-
+    if event.state == 24 and str(canvas) == '.!scrollableimage.!canvas':
+        #print('Click com ALT')
+        #print(mouseX, mouseY)
+        #print(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution) )
+        canvas_obj_clicked = canvas.find_closest(mouseX, mouseY, halo=5) # get canvas object ID of where mouse pointer is 
+        print(id_tags_list)
+        print(canvas_obj_clicked)
+        if canvas_obj_clicked[0] in id_tags_list:
+            change_obj_position = True
 
 
       
 
     if (str(canvas) == '.!scrollableimage.!canvas') :
+        #print(canvasobject_clicked) #For you to visualize the canvas object number
 
         if distance_mode:
             if not distance2_mode:
@@ -355,19 +368,24 @@ def click_esq_event(event):
                 txt_pose.insert('end', texto_pose.format(xx = point[0], yy = point[1]) )
 
 
-def create_seta(event):
+def create_seta(event): # Soltou o mouse
     #mouseX,mouseY = event.x,event.y
     shape = np.shape(img)
     max_y, max_x  = shape[0], shape[1]
     # max_y, max_x = np.shape(img)
     global seta_p1, angle_mode, tag_mode, cont_tag, objects_to_delete, dict_objects, count_scale, distance_mode, distance2_mode
-    
+    global id_tags_list, change_obj_position
     try:
         canvas = event.widget
         mouseX = canvas.canvasx(event.x)
         mouseY = canvas.canvasy(event.y)
     except Exception as e:
         print(e)  
+
+    if not tag_mode and not graph_mode and change_obj_position:
+        change_obj_position = False
+        canvas.moveto(canvas_obj_clicked, mouseX, mouseY)
+
 
     if(botao_rotacionar):
         calcular_angulo_drop(event, click_p1, click_p1_trans, objects_to_delete)      
@@ -405,6 +423,7 @@ def create_seta(event):
             fonte = "Times "+str(5*count_scale)+" bold"
             obj_valor = canvas.create_text(seta_p1[0]+x_fim, seta_p1[1]+y_fim,fill="red",font=fonte, text=str(cont_tag).zfill(3)) 
             objects_to_delete.append(obj_valor)
+            id_tags_list.append(obj_valor)
             dict_objects[str(obj_valor)] = ['valor', [seta_p1[0]+x_fim, seta_p1[1]+y_fim], cont_tag]
             dict_tags[str(cont_tag)] = [point1[0], point1[1], theta, txt_local]
             
@@ -460,6 +479,9 @@ def mouse_move_seta(event):
         pass
         #print(e)
 
+
+    if not tag_mode and not graph_mode and change_obj_position:
+        canvas.moveto(canvas_obj_clicked, mouseX, mouseY)
 
     if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
             
