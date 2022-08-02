@@ -62,7 +62,7 @@ def init_setup():
     # global_origin = data['global_origin']
     # zoom_factor = data['scale']
 
-    f = open('../config_escritorio.yaml')
+    f = open('../map.yaml')
     data = yaml.load(f, Loader=yaml.FullLoader)
 
     map_file = '../'+data['image']
@@ -192,6 +192,8 @@ def click_esq_event(event):
         print(e)
 
 
+    if event.state == 24:
+        print('tá indo...')
     if event.state == 24 and str(canvas) == '.!scrollableimage.!canvas':
         #print('Click com ALT')
         #print(mouseX, mouseY)
@@ -203,7 +205,6 @@ def click_esq_event(event):
             change_obj_position = True
 
 
-      
 
     if (str(canvas) == '.!scrollableimage.!canvas') :
         #print(canvasobject_clicked) #For you to visualize the canvas object number
@@ -640,7 +641,7 @@ def salvar_tags():
         canvas_ref = image_window.cnvs
 
         json_object = json.dumps(dict_tags, indent = 4)
-        with open("tags.json", "w") as outfile:
+        with open("dict_tags.json", "w") as outfile:
             outfile.write(json_object)
 
         save_as_png(canvas_ref,'tags_posicionadas')
@@ -692,7 +693,8 @@ def salvar_grafos():
         print('')
 
     canvas_ref = image_window.cnvs
-    save_as_png(canvas_ref,'tags_posicionadas')
+    
+    save_as_png(canvas_ref,'grafo_aresta_'+str(radius)+'m')
     tkinter.messagebox.showinfo("Confirmação", "Arquivos gerados com sucesso")
 
 def calcular_angulo_drop(event, p1, p1_trans, objects_to_delete):
@@ -977,7 +979,9 @@ def mouse_scroll(event):
     global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last, gray
 
     canvas = event.widget
-    if event.num == 4 and event.state == 20:
+    print('num-evt: ', event.num)
+    print('state-evt: ', event.state)
+    if event.num == 4 and (event.state == 20 or event.state == 4 ) : #4 quando NumLock=false
         if len(dict_objects) <= 0:
             count_scale+=1
             zoom_factor = count_scale
@@ -993,7 +997,7 @@ def mouse_scroll(event):
         else:
             tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
 
-    if event.num == 5 and event.state == 20:
+    if event.num == 5 and (event.state == 20 or event.state == 4 ):
         if len(dict_objects) <= 0:
             count_scale-=1
             zoom_factor = count_scale
@@ -1014,6 +1018,9 @@ def mouse_scroll(event):
             tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
 
 
+def keydown(event):
+    print('{k!r}'.format(k = event.char))
+
 
 #<Double-Button-1
 root.bind("<Button 1>",click_esq_event)
@@ -1023,5 +1030,9 @@ root.bind("<ButtonRelease-1>",create_seta)
 root.bind("<B1-Motion>",mouse_move_seta)
 root.bind_all("<Button-4>", mouse_scroll)
 root.bind_all("<Button-5>", mouse_scroll)
+root.bind_all("<KeyPress>", keydown)
+#root.bind("<KeyRelease>", keyup)
+
+
 
 root.mainloop()
