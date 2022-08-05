@@ -49,6 +49,7 @@ nodes_position = []
 cont_vertice_grafo = 0
 id_tags_list = []
 change_obj_position = False
+move_tag_mode = False
 canvas_obj_clicked = -1
 
 colors = {'blue': (255, 0, 0), 'green': (0, 255, 0), 'red': (255, 0, 255), 'yellow': (0, 255, 255), 'magenta': (255, 0, 255), 'cyan': (255, 255, 0), 'white': (255, 255, 255), 'black': (0, 0, 0), 'gray': (125, 125, 125), 'rand': np.random.randint(0, high=256, size=(3,)).tolist(), 'dark_gray': (50, 50, 50), 'light_gray': (220, 220, 220)}
@@ -192,9 +193,9 @@ def click_esq_event(event):
         print(e)
 
 
-    if event.state == 24:
-        print('tá indo...')
-    if event.state == 24 and str(canvas) == '.!scrollableimage.!canvas':
+    #if event.state == 24:
+    #    print('tá indo...')
+    if (event.state == 24 or move_tag_mode) and str(canvas) == '.!scrollableimage.!canvas':
         #print('Click com ALT')
         #print(mouseX, mouseY)
         #print(abs(global_origin[0]/resolution), abs(global_origin[1]/resolution) )
@@ -383,7 +384,8 @@ def create_seta(event): # Soltou o mouse
     except Exception as e:
         print(e)  
 
-    if not tag_mode and not graph_mode and change_obj_position:
+    if (not tag_mode and not graph_mode and change_obj_position):# or ((not tag_mode and not graph_mode and move_tag_mode and change_obj_position)):
+        canvas.config(cursor="")
         change_obj_position = False
         canvas.moveto(canvas_obj_clicked, mouseX, mouseY)
 
@@ -481,7 +483,8 @@ def mouse_move_seta(event):
         #print(e)
 
 
-    if not tag_mode and not graph_mode and change_obj_position:
+    if (not tag_mode and not graph_mode and change_obj_position):# or (not tag_mode and not graph_mode and change_obj_position and move_tag_mode):
+        canvas.config(cursor="hand1")
         canvas.moveto(canvas_obj_clicked, mouseX, mouseY)
 
     if angle_mode and str(canvas) == '.!scrollableimage.!canvas': # Desenho seta orientação tag
@@ -800,11 +803,59 @@ def undone_tag():
             #image_window.reset_canvas([objects_to_delete.pop()])
 
 
+def zoom_in():
+    global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last, gray
+
+    if len(dict_objects) <= 0:
+        count_scale+=1
+        zoom_factor = count_scale
+        global_origin_last = global_origin
+        img, global_origin = zoom(original_img, count_scale, global_origin_default)
+        shape = np.shape(img)
+        altura, largura  = shape[0], shape[1]            
+        #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        im = Image.fromarray(img)
+        imgtk = ImageTk.PhotoImage(image=im)
+        image_window.redraw_canvas(1, imgtk)
+    else:
+        tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
 
 
+def zoom_out():
+    global root, img, count_scale, altura, largura, global_origin, imgtk, zoom_factor, global_origin_last#, gray
+
+    if len(dict_objects) <= 0:
+        count_scale-=1
+        zoom_factor = count_scale
+        if(count_scale < 1):
+            count_scale = 1
+        else:
+            global_origin_last = global_origin
+            img, global_origin = zoom(original_img, count_scale, global_origin_default)
+            shape = np.shape(img)
+            altura, largura  = shape[0], shape[1]                
+            #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            im = Image.fromarray(img)
+            imgtk = ImageTk.PhotoImage(image=im)
+
+            image_window.redraw_canvas(1, imgtk)
+    else:
+        tkinter.messagebox.showinfo("Atenção", "O zoom só poderá ser aplicado com o mapa resetado.")
 
 
-
+def move_tag():
+    global move_tag_mode, change_obj_position
+    if button_tag_move.config('text')[-1] == '\u2948 Concluir':
+        button_tag_move.config(text='\u2948 Mover', background=defaultbg)
+        
+        move_tag_mode = False
+        change_obj_position = False
+    else:
+        button_tag_move.config(text='\u2948 Concluir', background='red')
+        move_tag_mode = True
+        #change_obj_position = True
 
 
 
@@ -891,6 +942,17 @@ txt_dist.insert('end', '0.000')
 lbl_dist = tkinter.Label(labelframe_dist, text="m")
 lbl_dist.place(x=175, y=20)
 
+#####   Zoom \Mapa
+
+'''labelframe_zoom = tkinter.LabelFrame(left_panel, text="Zoom", width=200, height=80, labelanchor="n")
+labelframe_zoom.pack( anchor="w", padx=20 )
+
+button_zoonin = tkinter.Button(labelframe_zoom, text="Zoom -", width=7, height=1, command=ligar_grafos,  wraplength=90)
+button_zoonin.place(x=9, y=9)
+
+button_zoonout = tkinter.Button(labelframe_zoom, text="Zoom +", width=7, height=1, command=salvar_grafos, wraplength=90)
+button_zoonout.place(x=100, y=9)
+'''
 
 #####   Grafo
 
@@ -926,8 +988,9 @@ button_grafo_salvar.place(x=105, y=50)
 #check_rot.place(x=10, y=90)
 
 
-###### Geral
-labelframe_geral = tkinter.LabelFrame(left_panel, text="Geral", width=200, height=135, labelanchor="n")
+###### Geral #########
+
+labelframe_geral = tkinter.LabelFrame(left_panel, text="Geral", width=200, height=160, labelanchor="n")
 labelframe_geral.pack( anchor="w", padx=20, pady=5 )
 
 button_reset = tkinter.Button(labelframe_geral, text="\u267B Resetar", width=7, height=1, command=reset_win)
@@ -936,11 +999,17 @@ button_reset.place(x=10, y=10)
 button_reset = tkinter.Button(labelframe_geral, text="\u21b6 Desfazer", width=7, height=1, command=undone_tag)
 button_reset.place(x=105, y=10)
 
-button_close = tkinter.Button(labelframe_geral, text="\u00D7 Sair", width=7, height=1, command=close_win)
-button_close.place(x=10, y=50)
+button_zoonin = tkinter.Button(labelframe_geral, text="Zoom -", width=7, height=1, command=zoom_out,  wraplength=90)
+button_zoonin.place(x=10, y=50)
 
-button_reset = tkinter.Button(labelframe_geral, text="Outro", width=7, height=1, command=close_win)
-button_reset.place(x=105, y=50)
+button_zoonout = tkinter.Button(labelframe_geral, text="Zoom +", width=7, height=1, command=zoom_in, wraplength=90)
+button_zoonout.place(x=105, y=50)
+
+button_tag_move = tkinter.Button(labelframe_geral, text="\u2948 Mover", width=7, height=1, command=move_tag)
+button_tag_move.place(x=10, y=90)
+
+button_reset = tkinter.Button(labelframe_geral, text="\u00D7 Sair", width=7, height=1, command=close_win)
+button_reset.place(x=105, y=90)
 
 def eucl_dist(point1, point2):
     #sum_sq = np.sum(np.square(np.array(point1) - np.array(point2)))
@@ -1030,7 +1099,7 @@ root.bind("<ButtonRelease-1>",create_seta)
 root.bind("<B1-Motion>",mouse_move_seta)
 root.bind_all("<Button-4>", mouse_scroll)
 root.bind_all("<Button-5>", mouse_scroll)
-root.bind_all("<KeyPress>", keydown)
+#root.bind_all("<KeyPress>", keydown)
 #root.bind("<KeyRelease>", keyup)
 
 
